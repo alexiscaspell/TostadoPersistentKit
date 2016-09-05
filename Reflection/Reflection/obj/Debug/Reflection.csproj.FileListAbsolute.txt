@@ -1,0 +1,9 @@
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\bin\Debug\Reflection.exe.config
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\bin\Debug\Reflection.exe
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\bin\Debug\Reflection.pdb
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.csprojResolveAssemblyReference.cache
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.Form1.resources
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.Properties.Resources.resources
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.csproj.GenerateResource.Cache
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.exe
+c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.pdb
