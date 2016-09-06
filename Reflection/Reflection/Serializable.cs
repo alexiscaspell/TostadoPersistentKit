@@ -16,7 +16,15 @@ namespace TostadoPersistentKit
 
         internal String getMapFromVal(String value)
         {
-            return mappings.First(keyValuePair => keyValuePair.Value == value).Key;
+            foreach (KeyValuePair<String, String> keyValuePair in mappings)
+            {
+                if (keyValuePair.Value == value)
+                {
+                    return keyValuePair.Key;
+                }
+            }
+
+            return "";
         }
 
         internal String getMapFromKey(String key)

@@ -24,14 +24,18 @@ namespace Reflection
 
             Persona persona = repoPersona.traerPersonaCualquiera();
 
-            nameTextbox.Text = persona.nombre;
-            ageTextbox.Text = persona.edad.ToString();
+            nameTextbox.Text = persona.humano.nombreHumano;//persona.nombre;
+            ageTextbox.Text = persona.humano.dni.ToString();//edad.ToString();
 
             if (typeof(Serializable).IsAssignableFrom(typeof(Persona)))
             {
                 MessageBox.Show("Persona implementa Serializable!!");
             }
-            
+
+            MessageBox.Show("El dni es: " ,persona.humano.dni.ToString());
+
+            MessageBox.Show("El nombre de humano es: ", persona.humano.nombreHumano.ToString());
+
         }
     }
 }

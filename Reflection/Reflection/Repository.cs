@@ -52,13 +52,32 @@ namespace TostadoPersistentKit
 
         internal Serializable unSerialize(Dictionary<string, object> dictionary)
         {
+            return unSerialize(dictionary, modelClassType);
+        }
+
+        internal Serializable unSerialize(Dictionary<string, object> dictionary,Type modelClassType)
+        {
             Serializable objeto = (Serializable)Activator.CreateInstance(modelClassType);
 
             foreach (String dataName in dictionary.Keys)
             {
                 String propertyName = objeto.getMapFromVal(dataName);
 
-                objeto.GetType().GetProperty(propertyName).SetValue(objeto, dictionary[dataName]);
+                if (propertyName != "")
+                {
+                    Type propertyType = objeto.GetType().GetProperty(propertyName).PropertyType;//.GetType();
+
+                    bool isSerializable = typeof(Serializable).IsAssignableFrom(propertyType);
+
+                    if (isSerializable)
+                    {
+                        objeto.GetType().GetProperty(propertyName).SetValue(objeto, unSerialize(dictionary, propertyType));
+                    }
+                    else
+                    {
+                        objeto.GetType().GetProperty(propertyName).SetValue(objeto, dictionary[dataName]);
+                    }
+                }
             }
 
             return objeto;

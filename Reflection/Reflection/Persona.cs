@@ -13,10 +13,13 @@ namespace Reflection
 
         public int edad { get; set; }
 
+        public Humano humano { get; set; }
+
         internal override void map()
         {
             mappings.Add("nombre", "name");
             mappings.Add("edad", "age");
+            mappings.Add("humano", "idHumano");
         }
     }
 }

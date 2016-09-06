@@ -15,6 +15,8 @@ namespace Reflection
 
             diccionario.Add("name", "Jesus");
             diccionario.Add("age", 21);
+            diccionario.Add("idHumano", 38622907);
+            diccionario.Add("humanName", "Seit");
 
             return (Persona)unSerialize(diccionario);
         }
