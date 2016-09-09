@@ -11,8 +11,18 @@ namespace TostadoPersistentKit
 
         internal Dictionary<String, String> mappings = new Dictionary<string, string>();
 
+        //propiedad que representa el campo pk
+        internal String idProperty;
+
+        //Nombre de la tabla contra la que se mapea
+        internal String tableName;
+
         //Este metodo inicializa el diccionario mappings, con key=nombre propiedad y value=nombre modelo de datos
         internal abstract void map();
+
+        internal abstract void setIdProperty();
+
+        internal abstract void setTableNameProperty();
 
         internal String getMapFromVal(String value)
         {
@@ -38,6 +48,8 @@ namespace TostadoPersistentKit
 
         public Serializable()
         {
+            setIdProperty();
+            setTableNameProperty();
             map();
         }
     }

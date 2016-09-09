@@ -33,9 +33,15 @@ namespace Reflection
             personaAInsertar.dni = 123314;
             personaAInsertar.edad = 22;
 
-            repoPersona.insert(personaAInsertar, "persona");
+            repoPersona.insert(personaAInsertar);
 
             List<Serializable> personas = repoPersona.selectAll("persona");
+
+            repoPersona.delete(personas[1]);
+
+            ((Persona)personas[0]).edad = 2016;
+
+            repoPersona.update(personas[0]);
 
             //textBox.DataBindings.Add("Text", obj, "SomeProperty");
 
@@ -68,7 +74,6 @@ namespace Reflection
 
         private void button2_Click(object sender, EventArgs e)
         {
-            MessageBox.Show(persona.nombre);
         }
     }
 }
