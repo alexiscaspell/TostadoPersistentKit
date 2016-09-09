@@ -154,6 +154,45 @@ namespace TostadoPersistentKit
             DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
         }
 
+        //No setea valores null
+        //Esto supone una pk subrogada
+        internal void update(Serializable objeto, String primaryKeyPropertyName, String tableName)
+        {
+            String updateQuery = "update " + tableName + " set ";
+
+            List<SqlParameter> parametros = new List<SqlParameter>();
+
+            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
+
+            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
+            {
+                if (keyValuePair.Key!=primaryKeyPropertyName)
+                {
+                    String dataName = objeto.getMapFromKey(keyValuePair.Key);
+
+                    updateQuery += dataName + "=@" + dataName + ",";
+
+                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
+                }
+            }
+
+            updateQuery = updateQuery.Remove(updateQuery.Length - 1);
+
+            updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "=" 
+                        + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
+
+            DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
+        }
+
+        internal void delete(Serializable objeto,String primaryKeyPropertyName,String tableName)
+        {
+            String deleteQuery = "delete from " + tableName + " where " 
+                                + objeto.getMapFromKey(primaryKeyPropertyName) + "="
+                                + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto).ToString();
+
+            DataBase.Instance.ejecutarConsulta(deleteQuery);
+        }
+
         internal List<Serializable> selectAll(String tableName)
         {
             List<Dictionary<string, object>> tabla = DataBase.Instance.ejecutarConsulta("select * from " + tableName);
