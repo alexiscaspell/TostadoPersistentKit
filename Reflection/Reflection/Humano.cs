@@ -7,9 +7,9 @@ using TostadoPersistentKit;
 
 namespace Reflection
 {
-    class Humano : Serializable
+    public class Humano : Serializable
     {
-        public int dni { get; set; }
+        //public int dni { get; set; }
 
         public String nombreHumano { get; set; }
 

@@ -7,9 +7,11 @@ using TostadoPersistentKit;
 
 namespace Reflection
 {
-    class Persona : Humano
+    public class Persona : Humano
     {
         public string nombre { get; set; }
+
+        public int dni { get; set; }
 
         public int edad { get; set; }
 
@@ -17,9 +19,9 @@ namespace Reflection
 
         internal override void map()
         {
-            mappings.Add("nombre", "name");
-            mappings.Add("edad", "age");
-            mappings.Add("humano", "idHumano");
+            mappings.Add("nombre", "nombre");
+            mappings.Add("edad", "edad");
+            mappings.Add("dni", "dni");
         }
     }
 }

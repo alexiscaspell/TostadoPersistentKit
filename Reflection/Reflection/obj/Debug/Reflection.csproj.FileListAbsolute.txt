@@ -7,3 +7,13 @@ c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\
 c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.csproj.GenerateResource.Cache
 c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.exe
 c:\users\alexis\documents\visual studio 2015\Projects\Reflection\Reflection\obj\Debug\Reflection.pdb
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\bin\Debug\Reflection.exe.config
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\obj\Debug\Reflection.exe
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\obj\Debug\Reflection.pdb
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\bin\Debug\Reflection.exe
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\bin\Debug\Reflection.pdb
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\obj\Debug\Reflection.csprojResolveAssemblyReference.cache
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\obj\Debug\Reflection.Form1.resources
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\obj\Debug\Reflection.Properties.Resources.resources
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\obj\Debug\Reflection.csproj.GenerateResource.Cache
+C:\Users\Alexis\TostadoPersistentKit\Reflection\Reflection\bin\Debug\configuracion_sistema.txt

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TostadoPersistentKit
 {
-    abstract class Serializable
+    public abstract class Serializable
     {
 
         internal Dictionary<String, String> mappings = new Dictionary<string, string>();
@@ -29,7 +29,11 @@ namespace TostadoPersistentKit
 
         internal String getMapFromKey(String key)
         {
-            return mappings[key];
+            if (mappings.ContainsKey(key))
+            {
+                return mappings[key];
+            }
+            return "";
         }
 
         public Serializable()

@@ -34,7 +34,7 @@ namespace TostadoPersistentKit
             return returnValue(dictionaryList);
         }
 
-        internal object returnValue(List<Dictionary<string,object>> dictionaryList)
+        private object returnValue(List<Dictionary<string,object>> dictionaryList)
         {
             if (autoMapping)
             {
@@ -83,7 +83,7 @@ namespace TostadoPersistentKit
             return objeto;
         }
 
-        internal List<String> listSerializableProperties(object objeto)
+        private List<String> listSerializableProperties(object objeto)
         {
             List<String> serializableProperties = new List<string>();
 
@@ -99,6 +99,56 @@ namespace TostadoPersistentKit
             }
 
             return serializableProperties;
+        }
+
+        private Dictionary<string,object> getPropertyValues(Serializable objeto)
+        {
+            Dictionary<string, object> dictionary = new Dictionary<string, object>();
+
+            foreach (MemberInfo info in objeto.GetType().GetMembers())
+            {
+                if (info.MemberType == MemberTypes.Property)
+                {
+                    string propertyName = ((PropertyInfo)info).Name;
+
+                    object propertyValue = ((PropertyInfo)info).GetValue(objeto);
+
+                    if (propertyValue!=null)
+                    {
+                        dictionary.Add(propertyName, propertyValue);
+                    }
+                }
+            }
+
+            return dictionary;
+        }
+
+        internal void insert(Serializable objeto,String tableName)
+        {
+            String insertQuery = "insert into " + tableName + "(";
+
+            String valuesString = " values (";
+
+            List<SqlParameter> parametros = new List<SqlParameter>();
+
+            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
+
+            foreach (KeyValuePair<string,object> keyValuePair in propertyValues)
+            {
+                String dataName = objeto.getMapFromKey(keyValuePair.Key);
+
+                insertQuery += dataName + ",";
+
+                valuesString += "@" + dataName + ",";
+
+                DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
+            }
+
+            insertQuery = insertQuery.Remove(insertQuery.Length - 1);
+            valuesString = valuesString.Remove(valuesString.Length - 1);
+            insertQuery += ")" + valuesString + ")";
+
+            DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
         }
 
     }
