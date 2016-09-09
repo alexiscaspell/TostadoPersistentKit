@@ -35,7 +35,7 @@ namespace Reflection
 
             repoPersona.insert(personaAInsertar);
 
-            List<Serializable> personas = repoPersona.selectAll("persona");
+            List<Persona> personas = (List<Persona>)(object)repoPersona.selectAll();
 
             repoPersona.delete(personas[1]);
 

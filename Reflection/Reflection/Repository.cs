@@ -55,7 +55,7 @@ namespace TostadoPersistentKit
             return unSerialize(dictionary, modelClassType);
         }
 
-        internal Serializable unSerialize(Dictionary<string, object> dictionary,Type modelClassType)
+        private Serializable unSerialize(Dictionary<string, object> dictionary,Type modelClassType)
         {
             Serializable objeto = (Serializable)Activator.CreateInstance(modelClassType);
 
@@ -131,7 +131,7 @@ namespace TostadoPersistentKit
             insert(objeto,objeto.idProperty, objeto.tableName);
         }
 
-        internal void insert(Serializable objeto,String primaryKeyPropertyName,String tableName)
+        private void insert(Serializable objeto, String primaryKeyPropertyName, String tableName)
         {
             String insertQuery = "insert into " + tableName + "(";
 
@@ -141,9 +141,9 @@ namespace TostadoPersistentKit
 
             Dictionary<string, object> propertyValues = getPropertyValues(objeto);
 
-            foreach (KeyValuePair<string,object> keyValuePair in propertyValues)
+            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
             {
-                if (keyValuePair.Key!=primaryKeyPropertyName)
+                if (keyValuePair.Key != primaryKeyPropertyName)
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
@@ -162,6 +162,55 @@ namespace TostadoPersistentKit
             DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
         }
 
+        internal void insertCascade(Serializable objeto)
+        {
+            insertCascade(objeto, objeto.idProperty, objeto.tableName);
+        }
+
+        private void insertCascade(Serializable objeto,String primaryKeyPropertyName,String tableName)
+        {
+            String insertQuery = "insert into " + tableName + "(";
+
+            String valuesString = " values (";
+
+            List<SqlParameter> parametros = new List<SqlParameter>();
+
+            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
+
+            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
+            {
+                if (keyValuePair.Key != primaryKeyPropertyName)
+                {
+                    String dataName = objeto.getMapFromKey(keyValuePair.Key);
+
+                    insertQuery += dataName + ",";
+
+                    valuesString += "@" + dataName + ",";
+
+                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
+                }
+            }
+
+            insertQuery = insertQuery.Remove(insertQuery.Length - 1);
+            valuesString = valuesString.Remove(valuesString.Length - 1);
+            insertQuery += ")" + valuesString + ")";
+
+            DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
+
+            List<String> serializablePropertyNames = listSerializableProperties(objeto);
+
+            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
+            {
+                //Aca supongo que no puede ser null
+                if (serializablePropertyNames.Contains(keyValuePair.Key))
+                {
+                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                    insert(serializableProperty, serializableProperty.idProperty, serializableProperty.tableName);
+                }
+            }
+        }
+
         internal void update(Serializable objeto)
         {
             update(objeto, objeto.idProperty, objeto.tableName);
@@ -169,7 +218,7 @@ namespace TostadoPersistentKit
 
         //No setea valores null
         //Esto supone una pk subrogada
-        internal void update(Serializable objeto, String primaryKeyPropertyName, String tableName)
+        private void update(Serializable objeto, String primaryKeyPropertyName, String tableName)
         {
             String updateQuery = "update " + tableName + " set ";
 
@@ -202,7 +251,7 @@ namespace TostadoPersistentKit
             delete(objeto, objeto.idProperty, objeto.tableName);
         }
 
-        internal void delete(Serializable objeto,String primaryKeyPropertyName,String tableName)
+        private void delete(Serializable objeto,String primaryKeyPropertyName,String tableName)
         {
             String deleteQuery = "delete from " + tableName + " where " 
                                 + objeto.getMapFromKey(primaryKeyPropertyName) + "="
@@ -218,7 +267,7 @@ namespace TostadoPersistentKit
             return selectAll(objeto.tableName);
         }
 
-        internal List<Serializable> selectAll(String tableName)
+        private List<Serializable> selectAll(String tableName)
         {
             List<Dictionary<string, object>> tabla = DataBase.Instance.ejecutarConsulta("select * from " + tableName);
 
