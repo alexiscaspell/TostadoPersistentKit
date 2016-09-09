@@ -75,7 +75,10 @@ namespace TostadoPersistentKit
                     }
                     else
                     {
-                        objeto.GetType().GetProperty(propertyName).SetValue(objeto, dictionary[dataName]);
+                        if (dictionary[dataName].ToString()!="")//Esto esta hardcodeado para que no setee cosas en null
+                        {
+                            objeto.GetType().GetProperty(propertyName).SetValue(objeto, dictionary[dataName]);
+                        }
                     }
                 }
             }
@@ -149,6 +152,20 @@ namespace TostadoPersistentKit
             insertQuery += ")" + valuesString + ")";
 
             DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
+        }
+
+        internal List<Serializable> selectAll(String tableName)
+        {
+            List<Dictionary<string, object>> tabla = DataBase.Instance.ejecutarConsulta("select * from " + tableName);
+
+            List<Serializable> resultList = new List<Serializable>();
+
+            foreach (Dictionary<string,object> fila in tabla)
+            {
+                resultList.Add(unSerialize(fila, modelClassType));
+            }
+
+            return resultList;
         }
 
     }

@@ -35,6 +35,8 @@ namespace Reflection
 
             repoPersona.insert(personaAInsertar, "persona");
 
+            List<Serializable> personas = repoPersona.selectAll("persona");
+
             //textBox.DataBindings.Add("Text", obj, "SomeProperty");
 
             //nameTextbox.DataBindings.Add("Text", persona, "nombre");
