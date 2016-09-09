@@ -197,6 +197,41 @@ namespace TostadoPersistentKit
             return resultList;
         }
 
+        internal void update(Serializable objeto)
+        {
+            update(objeto, objeto.idProperty, objeto.tableName);
+        }
+
+        //No setea valores null
+        //Esto supone una pk subrogada
+        private void update(Serializable objeto, String primaryKeyPropertyName, String tableName)
+        {
+            String updateQuery = "update " + tableName + " set ";
+
+            List<SqlParameter> parametros = new List<SqlParameter>();
+
+            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
+
+            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
+            {
+                if (keyValuePair.Key != primaryKeyPropertyName)
+                {
+                    String dataName = objeto.getMapFromKey(keyValuePair.Key);
+
+                    updateQuery += dataName + "=@" + dataName + ",";
+
+                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
+                }
+            }
+
+            updateQuery = updateQuery.Remove(updateQuery.Length - 1);
+
+            updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "="
+                        + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
+
+            DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
+        }*/
+
         /*internal void insertCascade(Serializable objeto)
         {
             insertCascade(objeto, objeto.idProperty, objeto.tableName);
@@ -244,42 +279,6 @@ namespace TostadoPersistentKit
             }
 
             DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
-        }
-
-        internal void update(Serializable objeto)
-        {
-            update(objeto, objeto.idProperty, objeto.tableName);
-        }
-
-        //No setea valores null
-        //Esto supone una pk subrogada
-        private void update(Serializable objeto, String primaryKeyPropertyName, String tableName)
-        {
-            String updateQuery = "update " + tableName + " set ";
-
-            List<SqlParameter> parametros = new List<SqlParameter>();
-
-            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
-
-            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
-            {
-                if (keyValuePair.Key!=primaryKeyPropertyName)
-                {
-                    String dataName = objeto.getMapFromKey(keyValuePair.Key);
-
-                    updateQuery += dataName + "=@" + dataName + ",";
-
-                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
-                }
-            }
-
-            updateQuery = updateQuery.Remove(updateQuery.Length - 1);
-
-            updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "=" 
-                        + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
-
-            DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
         }*/
-
     }
 }

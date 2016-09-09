@@ -1,7 +1,0 @@
-﻿fecha del sistema = 10/07/2013
-instancia de sql = SQLSERVER2012
-base de datos = Prueba
-usuario = gd
-contraseña = gd2016
-
-//cada uno de los campos debe de estar separado con enters o '\n'
