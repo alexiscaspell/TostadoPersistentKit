@@ -162,12 +162,47 @@ namespace TostadoPersistentKit
             DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
         }
 
-        internal void insertCascade(Serializable objeto)
+        internal void delete(Serializable objeto)
         {
-            insertCascade(objeto, objeto.idProperty, objeto.tableName);
+            delete(objeto, objeto.idProperty, objeto.tableName);
         }
 
-        private void insertCascade(Serializable objeto,String primaryKeyPropertyName,String tableName)
+        private void delete(Serializable objeto,String primaryKeyPropertyName,String tableName)
+        {
+            String deleteQuery = "delete from " + tableName + " where " 
+                                + objeto.getMapFromKey(primaryKeyPropertyName) + "="
+                                + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto).ToString();
+
+            DataBase.Instance.ejecutarConsulta(deleteQuery);
+        }
+
+        internal List<Serializable> selectAll()
+        {
+            Serializable objeto = (Serializable)Activator.CreateInstance(modelClassType);
+
+            return selectAll(objeto.tableName);
+        }
+
+        private List<Serializable> selectAll(String tableName)
+        {
+            List<Dictionary<string, object>> tabla = DataBase.Instance.ejecutarConsulta("select * from " + tableName);
+
+            List<Serializable> resultList = new List<Serializable>();
+
+            foreach (Dictionary<string,object> fila in tabla)
+            {
+                resultList.Add(unSerialize(fila, modelClassType));
+            }
+
+            return resultList;
+        }
+
+        /*internal void insertCascade(Serializable objeto)
+        {
+            insertCascade(objeto, objeto.idProperty, objeto.tableName);
+        }*/
+
+        /*private void insertCascade(Serializable objeto,String primaryKeyPropertyName,String tableName)
         {
             String insertQuery = "insert into " + tableName + "(";
 
@@ -195,8 +230,6 @@ namespace TostadoPersistentKit
             valuesString = valuesString.Remove(valuesString.Length - 1);
             insertQuery += ")" + valuesString + ")";
 
-            DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
-
             List<String> serializablePropertyNames = listSerializableProperties(objeto);
 
             foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
@@ -206,9 +239,11 @@ namespace TostadoPersistentKit
                 {
                     Serializable serializableProperty = (Serializable)keyValuePair.Value;
 
-                    insert(serializableProperty, serializableProperty.idProperty, serializableProperty.tableName);
+                    insertCascade(serializableProperty, serializableProperty.idProperty, serializableProperty.tableName);
                 }
             }
+
+            DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
         }
 
         internal void update(Serializable objeto)
@@ -244,42 +279,7 @@ namespace TostadoPersistentKit
                         + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
 
             DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
-        }
-
-        internal void delete(Serializable objeto)
-        {
-            delete(objeto, objeto.idProperty, objeto.tableName);
-        }
-
-        private void delete(Serializable objeto,String primaryKeyPropertyName,String tableName)
-        {
-            String deleteQuery = "delete from " + tableName + " where " 
-                                + objeto.getMapFromKey(primaryKeyPropertyName) + "="
-                                + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto).ToString();
-
-            DataBase.Instance.ejecutarConsulta(deleteQuery);
-        }
-
-        internal List<Serializable> selectAll()
-        {
-            Serializable objeto = (Serializable)Activator.CreateInstance(modelClassType);
-
-            return selectAll(objeto.tableName);
-        }
-
-        private List<Serializable> selectAll(String tableName)
-        {
-            List<Dictionary<string, object>> tabla = DataBase.Instance.ejecutarConsulta("select * from " + tableName);
-
-            List<Serializable> resultList = new List<Serializable>();
-
-            foreach (Dictionary<string,object> fila in tabla)
-            {
-                resultList.Add(unSerialize(fila, modelClassType));
-            }
-
-            return resultList;
-        }
+        }*/
 
     }
 }
