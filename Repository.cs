@@ -153,7 +153,7 @@ namespace TostadoPersistentKit
 
                     bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
 
-                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+                    Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
 
                     object parametro = isSerializableProperty ? serializableProperty.GetType().
                                         GetProperty(serializableProperty.idProperty).
@@ -230,7 +230,7 @@ namespace TostadoPersistentKit
 
                     bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
 
-                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+                    Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
 
                     object parametro = isSerializableProperty ? serializableProperty.GetType().
                                         GetProperty(serializableProperty.idProperty).
@@ -271,7 +271,7 @@ namespace TostadoPersistentKit
 
                     bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
 
-                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+                    Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
 
                     object parametro = isSerializableProperty ? serializableProperty.GetType().
                                         GetProperty(serializableProperty.idProperty).
