@@ -9,6 +9,10 @@ namespace TostadoPersistentKit
     public abstract class Serializable
     {
 
+        internal enum PrimaryKeyType { SURROGATE,NATURAL}
+
+        internal PrimaryKeyType primaryKetyType;
+
         internal Dictionary<String, String> mappings = new Dictionary<string, string>();
 
         //propiedad que representa el campo pk
@@ -23,6 +27,9 @@ namespace TostadoPersistentKit
         internal abstract void setIdProperty();
 
         internal abstract void setTableNameProperty();
+
+        //Setea un enum que indica que tipo de pk es
+        internal abstract void setPrimaryKeyType();
 
         internal String getMapFromVal(String value)
         {
@@ -48,6 +55,7 @@ namespace TostadoPersistentKit
 
         public Serializable()
         {
+            setPrimaryKeyType();
             setIdProperty();
             setTableNameProperty();
             map();

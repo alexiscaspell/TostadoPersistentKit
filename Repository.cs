@@ -146,7 +146,7 @@ namespace TostadoPersistentKit
 
             foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
             {
-                if (keyValuePair.Key != primaryKeyPropertyName)
+                if (keyValuePair.Key != primaryKeyPropertyName || objeto.primaryKetyType == Serializable.PrimaryKeyType.NATURAL)
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
@@ -210,12 +210,12 @@ namespace TostadoPersistentKit
 
         internal void update(Serializable objeto)
         {
-            update(objeto, objeto.idProperty, objeto.tableName);
+            update(objeto, objeto.idProperty, objeto.tableName,false);
         }
 
         //No setea valores null
         //Esto supone una pk subrogada
-        private void update(Serializable objeto, String primaryKeyPropertyName, String tableName)
+        private void update(Serializable objeto, String primaryKeyPropertyName, String tableName, bool cascadeMode)
         {
             String updateQuery = "update " + tableName + " set ";
 
@@ -225,7 +225,7 @@ namespace TostadoPersistentKit
 
             foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
             {
-                if (keyValuePair.Key != primaryKeyPropertyName)
+                if (keyValuePair.Key != primaryKeyPropertyName || objeto.primaryKetyType == Serializable.PrimaryKeyType.NATURAL)
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
@@ -247,111 +247,29 @@ namespace TostadoPersistentKit
 
             updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "="
                         + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
+
+            if (cascadeMode)
+            {
+                List<String> serializablePropertyNames = listSerializableProperties(objeto);
+
+                foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
+                {
+                    //Aca supongo que no puede ser null
+                    if (serializablePropertyNames.Contains(keyValuePair.Key))
+                    {
+                        Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                        update(serializableProperty, serializableProperty.idProperty, serializableProperty.tableName, cascadeMode);
+                    }
+                }
+            }
 
             DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
         }
 
         internal void updateCascade(Serializable objeto)
         {
-            updateCascade(objeto, objeto.idProperty, objeto.tableName);
+            update(objeto, objeto.idProperty, objeto.tableName,true);
         }
-
-        private void updateCascade(Serializable objeto, String primaryKeyPropertyName, String tableName)
-        {
-            String updateQuery = "update " + tableName + " set ";
-
-            List<SqlParameter> parametros = new List<SqlParameter>();
-
-            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
-
-            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
-            {
-                if (keyValuePair.Key != primaryKeyPropertyName)
-                {
-                    String dataName = objeto.getMapFromKey(keyValuePair.Key);
-
-                    updateQuery += dataName + "=@" + dataName + ",";
-
-                    bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
-
-                    Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
-
-                    object parametro = isSerializableProperty ? serializableProperty.GetType().
-                                        GetProperty(serializableProperty.idProperty).
-                                        GetValue(serializableProperty) : keyValuePair.Value;
-
-                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
-                }
-            }
-
-            updateQuery = updateQuery.Remove(updateQuery.Length - 1);
-
-            updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "="
-                        + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
-
-            List<String> serializablePropertyNames = listSerializableProperties(objeto);
-
-            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
-            {
-                //Aca supongo que no puede ser null
-                if (serializablePropertyNames.Contains(keyValuePair.Key))
-                {
-                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
-
-                    updateCascade(serializableProperty, serializableProperty.idProperty, serializableProperty.tableName);
-                }
-            }
-
-            DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
-        }
-
-        /*internal void insertCascade(Serializable objeto)
-        {
-            insertCascade(objeto, objeto.idProperty, objeto.tableName);
-        }*/
-
-        /*private void insertCascade(Serializable objeto,String primaryKeyPropertyName,String tableName)
-        {
-            String insertQuery = "insert into " + tableName + "(";
-
-            String valuesString = " values (";
-
-            List<SqlParameter> parametros = new List<SqlParameter>();
-
-            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
-
-            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
-            {
-                if (keyValuePair.Key != primaryKeyPropertyName)
-                {
-                    String dataName = objeto.getMapFromKey(keyValuePair.Key);
-
-                    insertQuery += dataName + ",";
-
-                    valuesString += "@" + dataName + ",";
-
-                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
-                }
-            }
-
-            insertQuery = insertQuery.Remove(insertQuery.Length - 1);
-            valuesString = valuesString.Remove(valuesString.Length - 1);
-            insertQuery += ")" + valuesString + ")";
-
-            List<String> serializablePropertyNames = listSerializableProperties(objeto);
-
-            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
-            {
-                //Aca supongo que no puede ser null
-                if (serializablePropertyNames.Contains(keyValuePair.Key))
-                {
-                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
-
-                    insertCascade(serializableProperty, serializableProperty.idProperty, serializableProperty.tableName);
-                }
-            }
-
-            DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
-        }*/
     }
 }
