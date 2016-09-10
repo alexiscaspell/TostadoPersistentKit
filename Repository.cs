@@ -94,7 +94,10 @@ namespace TostadoPersistentKit
             {
                 if (info.MemberType==MemberTypes.Property)
                 {
-                    if (typeof(Serializable).IsAssignableFrom(((PropertyInfo)info).GetType()))
+                    Type propertyType = ((PropertyInfo)info).PropertyType;
+
+                    bool isSerializable = typeof(Serializable).IsAssignableFrom(propertyType);
+                    if (isSerializable)
                     {
                         serializableProperties.Add(((PropertyInfo)info).Name);
                     }
