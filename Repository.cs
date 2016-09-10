@@ -29,7 +29,7 @@ namespace TostadoPersistentKit
 
         internal object executeQuery(String query, List<SqlParameter> parameters)
         {
-            List<Dictionary<string, object>> dictionaryList = DataBase.Instance.ejecutarStoredProcedure(query, parameters);
+            List<Dictionary<string, object>> dictionaryList = DataBase.Instance.ejecutarConsulta(query, parameters);
 
             return returnValue(dictionaryList);
         }
@@ -187,6 +187,34 @@ namespace TostadoPersistentKit
             DataBase.Instance.ejecutarConsulta(deleteQuery);
         }
 
+        //Se supone que lo que se espera en el where de la consulta es id.toString()
+        internal Serializable selectById(object id)
+        {
+            Serializable objeto = (Serializable)Activator.CreateInstance(modelClassType);
+
+            List<SqlParameter> parameters = new List<SqlParameter>();
+
+            string selectQuery = "select * from " + objeto.tableName + " where " +
+                                objeto.getMapFromKey(objeto.idProperty) + "=" + id.ToString();
+
+            List<Serializable> result = executeAutoMappedSelect(selectQuery, parameters);
+
+            return (result.Count > 0) ? result[0] : null;
+        }
+
+        private List<Serializable> executeAutoMappedSelect(String selectQuery,List<SqlParameter> parameters)
+        {
+            bool actualAutoMappingVal = autoMapping;//guardo el valor actual de autoMapping
+
+            autoMapping = true;
+
+            List<Serializable> result = (List<Serializable>)executeQuery(selectQuery, parameters);
+
+            autoMapping = actualAutoMappingVal;
+
+            return result;
+        }
+
         internal List<Serializable> selectAll()
         {
             Serializable objeto = (Serializable)Activator.CreateInstance(modelClassType);
@@ -196,16 +224,11 @@ namespace TostadoPersistentKit
 
         private List<Serializable> selectAll(String tableName)
         {
-            List<Dictionary<string, object>> tabla = DataBase.Instance.ejecutarConsulta("select * from " + tableName);
+            List<SqlParameter> parameters = new List<SqlParameter>();
 
-            List<Serializable> resultList = new List<Serializable>();
+            String selectQuery = "select * from " + tableName;
 
-            foreach (Dictionary<string,object> fila in tabla)
-            {
-                resultList.Add(unSerialize(fila, modelClassType));
-            }
-
-            return resultList;
+            return executeAutoMappedSelect(selectQuery, parameters);
         }
 
         internal void update(Serializable objeto)
@@ -214,7 +237,7 @@ namespace TostadoPersistentKit
         }
 
         //No setea valores null
-        //Esto supone una pk subrogada
+        //Si se modifico la pk aunque sea natural no la updatea (usea ignora la pk)
         private void update(Serializable objeto, String primaryKeyPropertyName, String tableName, bool cascadeMode)
         {
             String updateQuery = "update " + tableName + " set ";
@@ -225,7 +248,7 @@ namespace TostadoPersistentKit
 
             foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
             {
-                if (keyValuePair.Key != primaryKeyPropertyName || objeto.primaryKetyType == Serializable.PrimaryKeyType.NATURAL)
+                if (keyValuePair.Key != primaryKeyPropertyName)// || objeto.primaryKetyType == Serializable.PrimaryKeyType.NATURAL)
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
