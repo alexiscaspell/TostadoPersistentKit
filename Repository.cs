@@ -151,7 +151,15 @@ namespace TostadoPersistentKit
 
                     valuesString += "@" + dataName + ",";
 
-                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
+                    bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
+
+                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                    object parametro = isSerializableProperty ? serializableProperty.GetType().
+                                        GetProperty(serializableProperty.idProperty).
+                                        GetValue(serializableProperty) : keyValuePair.Value;
+
+                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
                 }
             }
 
@@ -220,7 +228,15 @@ namespace TostadoPersistentKit
 
                     updateQuery += dataName + "=@" + dataName + ",";
 
-                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, keyValuePair.Value);
+                    bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
+
+                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                    object parametro = isSerializableProperty ? serializableProperty.GetType().
+                                        GetProperty(serializableProperty.idProperty).
+                                        GetValue(serializableProperty) : keyValuePair.Value;
+
+                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
                 }
             }
 
@@ -230,7 +246,61 @@ namespace TostadoPersistentKit
                         + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
 
             DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
-        }*/
+        }
+
+        internal void updateCascade(Serializable objeto)
+        {
+            updateCascade(objeto, objeto.idProperty, objeto.tableName);
+        }
+
+        private void updateCascade(Serializable objeto, String primaryKeyPropertyName, String tableName)
+        {
+            String updateQuery = "update " + tableName + " set ";
+
+            List<SqlParameter> parametros = new List<SqlParameter>();
+
+            Dictionary<string, object> propertyValues = getPropertyValues(objeto);
+
+            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
+            {
+                if (keyValuePair.Key != primaryKeyPropertyName)
+                {
+                    String dataName = objeto.getMapFromKey(keyValuePair.Key);
+
+                    updateQuery += dataName + "=@" + dataName + ",";
+
+                    bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
+
+                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                    object parametro = isSerializableProperty ? serializableProperty.GetType().
+                                        GetProperty(serializableProperty.idProperty).
+                                        GetValue(serializableProperty) : keyValuePair.Value;
+
+                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
+                }
+            }
+
+            updateQuery = updateQuery.Remove(updateQuery.Length - 1);
+
+            updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "="
+                        + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
+
+            List<String> serializablePropertyNames = listSerializableProperties(objeto);
+
+            foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
+            {
+                //Aca supongo que no puede ser null
+                if (serializablePropertyNames.Contains(keyValuePair.Key))
+                {
+                    Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                    updateCascade(serializableProperty, serializableProperty.idProperty, serializableProperty.tableName);
+                }
+            }
+
+            DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
+        }
 
         /*internal void insertCascade(Serializable objeto)
         {
