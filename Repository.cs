@@ -59,9 +59,12 @@ namespace TostadoPersistentKit
         {
             Serializable objeto = (Serializable)Activator.CreateInstance(modelClassType);
 
+            Dictionary<string, object> dictionaryAux = copyDictionary(dictionary);
+
             foreach (String dataName in dictionary.Keys)
             {
                 String propertyName = objeto.getMapFromVal(dataName);
+                String keyToRemove = dataName;
 
                 if (propertyName != "")
                 {
@@ -71,7 +74,14 @@ namespace TostadoPersistentKit
 
                     if (isSerializable)
                     {
-                        objeto.GetType().GetProperty(propertyName).SetValue(objeto, unSerialize(dictionary, propertyType));
+                        Serializable propertyInstance = (Serializable)Activator.CreateInstance(propertyType);
+                        keyToRemove = propertyInstance.getMapFromKey(propertyInstance.idProperty);
+
+                        object dataValue = dictionaryAux[dataName];
+                        dictionaryAux.Remove(dataName);
+                        dictionaryAux.Add(keyToRemove, dataValue);
+
+                        objeto.GetType().GetProperty(propertyName).SetValue(objeto, unSerialize(dictionaryAux, propertyType));
                     }
                     else
                     {
@@ -80,10 +90,23 @@ namespace TostadoPersistentKit
                             objeto.GetType().GetProperty(propertyName).SetValue(objeto, dictionary[dataName]);
                         }
                     }
+                    dictionaryAux.Remove(keyToRemove);
                 }
             }
 
             return objeto;
+        }
+
+        private Dictionary<string, object> copyDictionary(Dictionary<string, object> dictionary)
+        {
+            Dictionary<string, object> copyDictionary = new Dictionary<string, object>();
+
+            foreach (KeyValuePair<string,object> keyValuePair in dictionary)
+            {
+                copyDictionary.Add(keyValuePair.Key, keyValuePair.Value);
+            }
+
+            return copyDictionary;
         }
 
         private List<String> listSerializableProperties(object objeto)
