@@ -66,9 +66,12 @@ namespace TostadoPersistentKit
                     break;
             }
 
-            foreach (SqlParameter parametro in parametros)
+            if (parametros!=null)
             {
-                comando.Parameters.Add(parametro);
+                foreach (SqlParameter parametro in parametros)
+                {
+                    comando.Parameters.Add(parametro);
+                }
             }
 
             SqlDataReader reader= comando.ExecuteReader();
