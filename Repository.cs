@@ -225,7 +225,7 @@ namespace TostadoPersistentKit
         {
             Serializable objeto = (Serializable)Activator.CreateInstance(getModelClassType());
 
-            List<object> result = selectByProperty(objeto.getMapFromKey(objeto.getIdPropertyName()), id);
+            List<object> result = selectByProperty(objeto.getIdPropertyName(), id);
 
             return (result.Count > 0) ? result[0] : null;
         }
