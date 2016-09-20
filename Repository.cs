@@ -164,10 +164,15 @@ namespace TostadoPersistentKit
 
         internal void insert(Serializable objeto)
         {
-            insert(objeto,objeto.getIdPropertyName(), objeto.getTableName());
+            insert(objeto,objeto.getIdPropertyName(), objeto.getTableName(),false);
         }
 
-        private void insert(Serializable objeto, String primaryKeyPropertyName, String tableName)
+        internal void insertCascade(Serializable objeto)
+        {
+            insert(objeto, objeto.getIdPropertyName(), objeto.getTableName(), true);
+        }
+
+        private void insert(Serializable objeto, String primaryKeyPropertyName, String tableName,bool cascade)
         {
             String insertQuery = "insert into " + tableName + "(";
 
@@ -191,6 +196,11 @@ namespace TostadoPersistentKit
 
                     Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
 
+                    if (cascade && isSerializableProperty)
+                    {
+                        insert(serializableProperty, serializableProperty.getIdPropertyName(), serializableProperty.getTableName(), true);
+                    }
+
                     object parametro = isSerializableProperty ? serializableProperty.GetType().
                                         GetProperty(serializableProperty.getIdPropertyName()).
                                         GetValue(serializableProperty) : keyValuePair.Value;
@@ -201,9 +211,15 @@ namespace TostadoPersistentKit
 
             insertQuery = insertQuery.Remove(insertQuery.Length - 1);
             valuesString = valuesString.Remove(valuesString.Length - 1);
-            insertQuery += ")" + valuesString + ")";
+            insertQuery += ") " + "output inserted."+ objeto.getMapFromKey(objeto.getIdPropertyName())
+                               + valuesString + ")";
 
-            DataBase.Instance.ejecutarConsulta(insertQuery, parametros);
+            List<Dictionary<string, object>> insertResult = DataBase.Instance.ejecutarConsulta(
+                                                            insertQuery, parametros);
+
+            object idValue = insertResult[0][objeto.getMapFromKey(objeto.getIdPropertyName())];
+
+            objeto.GetType().GetProperty(objeto.getIdPropertyName()).SetValue(objeto, idValue);
         }
 
         internal void delete(Serializable objeto)
