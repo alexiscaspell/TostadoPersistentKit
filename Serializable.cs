@@ -10,16 +10,11 @@ namespace TostadoPersistentKit
     {
 
         internal enum PrimaryKeyType { SURROGATE,NATURAL}
+        internal enum FetchType { EAGER,LAZY}
 
         //internal PrimaryKeyType primaryKetyType;
 
         internal Dictionary<String, String> mappings = new Dictionary<string, string>();
-
-        //propiedad que representa el campo pk
-        //internal String idProperty;
-
-        //Nombre de la tabla contra la que se mapea
-        //internal String tableName;
 
         //Este metodo inicializa el diccionario mappings, con key=nombre propiedad y value=nombre modelo de datos
         internal abstract void map();
@@ -30,6 +25,8 @@ namespace TostadoPersistentKit
 
         //Setea un enum que indica que tipo de pk es
         internal abstract PrimaryKeyType getPrimaryKeyType();
+
+        internal abstract FetchType getFetchType();
 
         internal String getMapFromVal(String value)
         {

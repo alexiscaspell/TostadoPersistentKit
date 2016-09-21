@@ -30,6 +30,36 @@ namespace TostadoPersistentKit
             return returnValue(dictionaryList);
         }
 
+        private void completeSerializableObject(Serializable incompleteObject)
+        {
+            foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject))
+            {
+                if (typeof(Serializable).IsAssignableFrom(item.Value.GetType()))
+                {
+                    Serializable serializableProperty = (Serializable)item.Value;
+
+                    /*if (serializableProperty.getPrimaryKeyType()==Serializable.PrimaryKeyType.SURROGATE)
+                    {
+                        object idValue = serializableProperty.GetType().
+                                        GetProperty(serializableProperty.getIdPropertyName()).
+                                        GetValue(serializableProperty);
+                        int idIntValue = (int)getCastedValue(idValue, typeof(int));
+
+                        if (idIntValue==0)
+                        {
+                            return;
+                        }
+                    }*/
+
+                    serializableProperty = (Serializable)selectById(serializableProperty.GetType().
+                                   GetProperty(serializableProperty.getIdPropertyName()).
+                                   GetValue(serializableProperty));
+
+                    incompleteObject.GetType().GetProperty(item.Key).SetValue(incompleteObject, serializableProperty);
+                }
+            }
+        }
+
         private object returnValue(List<Dictionary<string,object>> dictionaryList)
         {
             if (autoMapping)
@@ -37,6 +67,16 @@ namespace TostadoPersistentKit
                 List<object> mappedList = new List<object>();
 
                 dictionaryList.ForEach(dictionary => mappedList.Add(unSerialize(dictionary)));
+
+                foreach (var item in mappedList)
+                {
+                    Serializable.FetchType fetchType = ((Serializable)item).getFetchType();
+
+                    if (fetchType == Serializable.FetchType.EAGER)
+                    {
+                        completeSerializableObject((Serializable)item);
+                    }
+                }
 
                 return mappedList;
             }
