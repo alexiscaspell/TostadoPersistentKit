@@ -68,27 +68,27 @@ namespace TostadoPersistentKit
 
                     bool isSerializable = typeof(Serializable).IsAssignableFrom(propertyType);
 
-                    if (isSerializable)
+                    if (dictionary[dataName].ToString() != "")//Esto esta hardcodeado para que no setee cosas en null
                     {
-                        Serializable propertyInstance = (Serializable)Activator.CreateInstance(propertyType);
-                        keyToRemove = propertyInstance.getMapFromKey(propertyInstance.getIdPropertyName());
+                        if (isSerializable)
+                        {
+                            Serializable propertyInstance = (Serializable)Activator.CreateInstance(propertyType);
+                            keyToRemove = propertyInstance.getMapFromKey(propertyInstance.getIdPropertyName());
 
-                        object dataValue = dictionaryAux[dataName];
-                        dictionaryAux.Remove(dataName);
-                        dictionaryAux.Add(keyToRemove, dataValue);
+                            object dataValue = dictionaryAux[dataName];
+                            dictionaryAux.Remove(dataName);
+                            dictionaryAux.Add(keyToRemove, dataValue);
 
-                        objeto.GetType().GetProperty(propertyName).SetValue(objeto, unSerialize(dictionaryAux, propertyType));
-                    }
-                    else
-                    {
-                        if (dictionary[dataName].ToString()!="")//Esto esta hardcodeado para que no setee cosas en null
+                            objeto.GetType().GetProperty(propertyName).SetValue(objeto, unSerialize(dictionaryAux, propertyType));
+                        }
+
+                        else
                         {
                             object dataValue = getCastedValue(dictionary[dataName], objeto.GetType().GetProperty(propertyName).PropertyType);
-
                             objeto.GetType().GetProperty(propertyName).SetValue(objeto, dataValue);
                         }
+                        dictionaryAux.Remove(keyToRemove);
                     }
-                    dictionaryAux.Remove(keyToRemove);
                 }
             }
 
@@ -312,17 +312,20 @@ namespace TostadoPersistentKit
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
-                    updateQuery += dataName + "=@" + dataName + ",";
-
                     bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
 
-                    Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
+                    object parametro = keyValuePair.Value;
 
-                    object parametro = isSerializableProperty ? serializableProperty.GetType().
+                    if (isSerializableProperty)
+                    {
+                        Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                        parametro = serializableProperty.GetType().
                                         GetProperty(serializableProperty.getIdPropertyName()).
-                                        GetValue(serializableProperty) : keyValuePair.Value;
-
-                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
+                                        GetValue(serializableProperty);
+                    }
+                        updateQuery += dataName + "=@" + dataName + ",";
+                        DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
                 }
             }
 
