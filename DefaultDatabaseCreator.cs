@@ -59,7 +59,10 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
 
         private void createForeignKeys(Serializable objeto)
         {
-            if (objeto.getFetchType()==Serializable.FetchType.LAZY)
+            int serializablePropertyCounter = listProperties(objeto).Count(property => 
+                                                isSerializableProperty(property, objeto));
+
+            if (serializablePropertyCounter==0)
             {
                 return;
             }

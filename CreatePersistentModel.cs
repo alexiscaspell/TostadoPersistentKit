@@ -22,6 +22,8 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
             DefaultDatabaseCreator databaseCreator = new DefaultDatabaseCreator();
 
             databaseCreator.createPersistentDefaultModel();
+
+            MessageBox.Show("Tables created succesfuly");
         }
 
         private void CreatePersistentModel_Load(object sender, EventArgs e)
