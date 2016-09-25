@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace TostadoPersistentKit {
 
-    class Sistema
+    public class Sistema
     {
         #region Singleton
         private static volatile Sistema instancia = null;

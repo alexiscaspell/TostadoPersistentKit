@@ -8,7 +8,7 @@ using TostadoPersistentKit;
 
 namespace UsingTostadoPersistentKit.TostadoPersistentKit
 {
-    class DefaultDatabaseCreator
+    public class DefaultDatabaseCreator
     {
 
         private Dictionary<Type, Serializable> dictionaryObjectsAndTypes = new Dictionary<Type, Serializable>();
@@ -18,10 +18,55 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
             loadObjectsAndTypes();
         }
 
-        public void createPersistentDefaultModel()
+        public void createPersistentDefaultModel(bool deleteExistingTables)
         {
+            if (deleteExistingTables)
+            {
+                dropExistingTables();
+            }
+
+            if (dictionaryObjectsAndTypes.Values.Any(objeto => existsTable(objeto.getTableName())))
+            {
+                return;//Si existe alguna de las tablas no creo nada
+            }
+
             createIncompleteTables();
             createForeignKeys();
+        }
+
+        public void dropExistingTables()
+        {
+            //Este while sirve para ir borrando las tablas varias veces, porque algunas no
+            //se borran a la primera por las fks
+            while (dictionaryObjectsAndTypes.Values.Any(o=>existsTable(o.getTableName())))
+            {
+                foreach (var item in dictionaryObjectsAndTypes.Values)
+                {
+                    if (existsTable(item.getTableName()))
+                    {
+                        dropTable(item.getTableName());
+                    }
+                }
+            }
+        }
+
+        private void dropTable(string table)
+        {
+            string dropQuery = "drop table " + table;
+
+            try
+            {
+                DataBase.Instance.ejecutarConsulta(dropQuery);
+            }
+            catch (Exception)
+            {
+                return;//a esconder mi amor vamos a esconder mi amor...
+            }
+        }
+
+        public void createPersistentDefaultModel()
+        {
+            createPersistentDefaultModel(false);
         }
 
         private void loadObjectsAndTypes()
@@ -157,6 +202,10 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
             {
                 return "bit";
             }
+            if (typeof(DateTime) == type)
+            {
+                return "datetime";
+            }
 
             return "";
         }
@@ -184,6 +233,14 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
             }
 
             return properties;
+        }
+
+        private bool existsTable(String tableName)
+        {
+            string existsQuery = "if EXISTS(SELECT * FROM sysobjects  WHERE name = '" +
+                tableName + "') select 1 as value else select 0 as value";
+
+            return Convert.ToBoolean(DataBase.Instance.ejecutarConsulta(existsQuery)[0]["value"]);
         }
     }
 }

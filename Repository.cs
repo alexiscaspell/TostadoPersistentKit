@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace TostadoPersistentKit
 {
-    abstract class Repository
+    public abstract class Repository
     {
         //Esto me dice si se va a mapear sola la clase o a mano, se puede cambiar en cualquier momento
         internal Boolean autoMapping = true;
