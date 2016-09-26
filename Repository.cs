@@ -241,24 +241,27 @@ namespace TostadoPersistentKit
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
-                    insertQuery += dataName + ",";
-
-                    valuesString += "@" + dataName + ",";
-
-                    bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
-
-                    Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
-
-                    if (cascade && isSerializableProperty)
+                    if (dataName!="")
                     {
-                        insert(serializableProperty, serializableProperty.getIdPropertyName(), serializableProperty.getTableName(), true);
+                        insertQuery += dataName + ",";
+
+                        valuesString += "@" + dataName + ",";
+
+                        bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
+
+                        Serializable serializableProperty = isSerializableProperty ? (Serializable)keyValuePair.Value : null;
+
+                        if (cascade && isSerializableProperty)
+                        {
+                            insert(serializableProperty, serializableProperty.getIdPropertyName(), serializableProperty.getTableName(), true);
+                        }
+
+                        object parametro = isSerializableProperty ? serializableProperty.GetType().
+                                            GetProperty(serializableProperty.getIdPropertyName()).
+                                            GetValue(serializableProperty) : keyValuePair.Value;
+
+                        DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
                     }
-
-                    object parametro = isSerializableProperty ? serializableProperty.GetType().
-                                        GetProperty(serializableProperty.getIdPropertyName()).
-                                        GetValue(serializableProperty) : keyValuePair.Value;
-
-                    DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
                 }
             }
 
@@ -379,20 +382,23 @@ namespace TostadoPersistentKit
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
-                    bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
-
-                    object parametro = keyValuePair.Value;
-
-                    if (isSerializableProperty)
+                    if (dataName!="")
                     {
-                        Serializable serializableProperty = (Serializable)keyValuePair.Value;
+                        bool isSerializableProperty = typeof(Serializable).IsAssignableFrom(keyValuePair.Value.GetType());
 
-                        parametro = serializableProperty.GetType().
-                                        GetProperty(serializableProperty.getIdPropertyName()).
-                                        GetValue(serializableProperty);
-                    }
+                        object parametro = keyValuePair.Value;
+
+                        if (isSerializableProperty)
+                        {
+                            Serializable serializableProperty = (Serializable)keyValuePair.Value;
+
+                            parametro = serializableProperty.GetType().
+                                            GetProperty(serializableProperty.getIdPropertyName()).
+                                            GetValue(serializableProperty);
+                        }
                         updateQuery += dataName + "=@" + dataName + ",";
                         DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
+                    }
                 }
             }
 
