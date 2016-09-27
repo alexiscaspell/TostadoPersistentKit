@@ -39,7 +39,7 @@ namespace TostadoPersistentKit
             return returnValue(dictionaryList,modelClassType);
         }
 
-        private void completeSerializableObject(Serializable incompleteObject)
+        internal void completeSerializableObject(Serializable incompleteObject)
         {
             foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject))
             {
