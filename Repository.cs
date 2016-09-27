@@ -43,6 +43,11 @@ namespace TostadoPersistentKit
         {
             foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject))
             {
+                if (incompleteObject.isOneToManyProperty(item.Key))
+                {
+                    completeOneToManyProperty(incompleteObject, item.Key);
+                }
+
                 if (typeof(Serializable).IsAssignableFrom(item.Value.GetType()))
                 {
                     Serializable serializableProperty = (Serializable)item.Value;
@@ -70,6 +75,52 @@ namespace TostadoPersistentKit
 
                     incompleteObject.GetType().GetProperty(item.Key).SetValue(incompleteObject, serializableProperty);
                 }
+            }
+        }
+
+        private void completeOneToManyProperty(Serializable incompleteObject, string propertyName)
+        {
+            Type containingTypeOfProperty = Assembly.GetExecutingAssembly().
+                                            GetType(incompleteObject.GetType().
+                                            GetProperty(propertyName).PropertyType.
+                                            ToString().Split('[')[1].Split(']')[0]);
+
+            Serializable containingTypeOfPropertyInstance = (Serializable)Activator.CreateInstance(containingTypeOfProperty);
+
+            string intermediateTable = incompleteObject.getOneToManyTable(propertyName);
+            string currentForeignKey = incompleteObject.getOneToManyFk(propertyName);
+            string currentPrimaryKey = incompleteObject.getOneToManyPk(propertyName);
+
+            object currentIdValue = incompleteObject.GetType().GetProperty(incompleteObject.getIdPropertyName()).
+                                    GetValue(incompleteObject);
+
+            bool isCharObject = typeof(string).IsAssignableFrom(currentIdValue.GetType()) || typeof(char).IsAssignableFrom(currentIdValue.GetType());
+
+            string expected = isCharObject ? "'" + currentIdValue.ToString() + "'" : currentIdValue.ToString();
+
+
+            string query = "select * from " + intermediateTable + " ";
+            string conditionQuery = "where " + currentPrimaryKey + "=" + expected;
+
+            if (containingTypeOfPropertyInstance.getTableName()!=intermediateTable)
+            {
+                query += "inner join " + containingTypeOfPropertyInstance.getTableName() +
+                        " on(" + intermediateTable + "." + currentForeignKey + "=" + 
+                        containingTypeOfPropertyInstance.getTableName()+"." +
+                        containingTypeOfPropertyInstance.
+                        getMapFromKey(containingTypeOfPropertyInstance.getIdPropertyName()) + ") ";
+            }
+
+            query += conditionQuery;
+
+            foreach (var item in (List<object>)executeQuery(query, null, containingTypeOfProperty))
+            {
+                List<object> parameters = new List<object> { item};
+                incompleteObject.GetType().GetProperty(propertyName).
+                                PropertyType.GetMethod("Add").
+                                Invoke(incompleteObject.GetType().
+                                GetProperty(propertyName).
+                                GetValue(incompleteObject), parameters.ToArray());
             }
         }
 

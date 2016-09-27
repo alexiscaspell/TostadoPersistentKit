@@ -15,6 +15,8 @@ namespace TostadoPersistentKit
         //internal PrimaryKeyType primaryKetyType;
 
         internal Dictionary<String, String> mappings = new Dictionary<string, string>();
+        internal Dictionary<String, String> oneToMany = new Dictionary<string, string>();
+        //internal Dictionary<String, String> manyToOne = new Dictionary<string, string>();
 
         //Este metodo inicializa el diccionario mappings, con key=nombre propiedad y value=nombre modelo de datos
         internal abstract void map();
@@ -28,9 +30,9 @@ namespace TostadoPersistentKit
 
         internal abstract FetchType getFetchType();
 
-        internal String getMapFromVal(String value)
+        private String getMapFromVal(Dictionary<string,string> dictionary,String value)
         {
-            foreach (KeyValuePair<String, String> keyValuePair in mappings)
+            foreach (KeyValuePair<String, String> keyValuePair in dictionary)
             {
                 if (keyValuePair.Value == value)
                 {
@@ -41,13 +43,49 @@ namespace TostadoPersistentKit
             return "";
         }
 
-        internal String getMapFromKey(String key)
+        private String getMapFromKey(Dictionary<string,string> dictionary,String key)
         {
-            if (mappings.ContainsKey(key))
+            if (dictionary.ContainsKey(key))
             {
-                return mappings[key];
+                return dictionary[key];
             }
             return "";
+        }
+
+        internal String getMapFromVal(String value)
+        {
+            return getMapFromVal(mappings, value);
+        }
+
+        internal String getMapFromKey(String key)
+        {
+            return getMapFromKey(mappings, key);
+        }
+
+        internal String getOneToManyTable(String key)
+        {
+            string[] result = getMapFromKey(oneToMany, key).Split('.');
+
+            return result.Count() > 1 ? result[1] : "";
+        }
+
+        internal String getOneToManyPk(String key)
+        {
+            string[] result = getMapFromKey(oneToMany, key).Split('.');
+
+            return result.Count() > 0 ? result[0] : "";
+        }
+
+        internal String getOneToManyFk(String key)
+        {
+            string[] result = getMapFromKey(oneToMany, key).Split('.');
+
+            return result.Count() > 2 ? result[2] : "";
+        }
+
+        internal bool isOneToManyProperty(string propertyName)
+        {
+            return oneToMany.ContainsKey(propertyName);
         }
 
         public Serializable()
