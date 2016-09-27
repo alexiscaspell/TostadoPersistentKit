@@ -36,11 +36,25 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
 
         public void dropExistingTables()
         {
+            List<string> oneToManyTables = new List<string>();
+
+            foreach (var item in dictionaryObjectsAndTypes.Values)
+            {
+                getOneToManyTables(item).ForEach(table => oneToManyTables.Add(table));
+            }
+
             //Este while sirve para ir borrando las tablas varias veces, porque algunas no
             //se borran a la primera por las fks
-            while (dictionaryObjectsAndTypes.Values.Any(o=>existsTable(o.getTableName())))
+            while (dictionaryObjectsAndTypes.Values.Any(o=>existsTable(o.getTableName()))&& oneToManyTables.Any(table => existsTable(table)))
             {
-                foreach (var item in dictionaryObjectsAndTypes.Values)
+                foreach (var item in oneToManyTables)//Borro tablas intermedias
+                {
+                    if (existsTable(item))
+                    {
+                        dropTable(item);
+                    }
+                }
+                foreach (var item in dictionaryObjectsAndTypes.Values)//Borro tablas
                 {
                     if (existsTable(item.getTableName()))
                     {
@@ -48,6 +62,16 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
                     }
                 }
             }
+        }
+
+        private List<string> getOneToManyTables(Serializable objeto)
+        {
+            List<string> listTables = new List<string>();
+
+            objeto.oneToMany.Keys.ToList().
+                    ForEach(property => listTables.Add(objeto.getOneToManyTable(property)));
+
+            return listTables;
         }
 
         private void dropTable(string table)
@@ -98,8 +122,55 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
         {
             foreach (var item in dictionaryObjectsAndTypes.Values)
             {
-                createForeignKeys(item);
+                createForeignKeys(item);//Me falta ver las fks de oneToMany
             }
+            foreach (var item in dictionaryObjectsAndTypes.Values)
+            {
+                createOneToManyTables(item);
+            }
+        }
+
+        private void createOneToManyTables(Serializable objeto)
+        {
+            foreach (var item in getOneToManyProperties(objeto))
+            {
+                if (!existsTable(objeto.getOneToManyTable(item)))
+                {
+                    createOneToManyTable(objeto, item);
+                }
+            }
+        }
+
+        private void createOneToManyTable(Serializable objeto, string propertyName)
+        {
+            Type containingTypeOfProperty = Assembly.GetExecutingAssembly().
+                                GetType(objeto.GetType().
+                                GetProperty(propertyName).PropertyType.
+                                ToString().Split('[')[1].Split(']')[0]);
+
+            Serializable containingTypeOfPropertyInstance = (Serializable)Activator.CreateInstance(containingTypeOfProperty);
+
+            string pkName = objeto.getOneToManyPk(propertyName);
+            string tableName = objeto.getOneToManyTable(propertyName);
+            string fkName = objeto.getOneToManyFk(propertyName);
+
+            string pkDataTypeName = getDataTypeName(objeto.GetType().
+                                    GetProperty(objeto.getIdPropertyName()).PropertyType);
+
+            string fkDataTypeName = getDataTypeName(containingTypeOfPropertyInstance.GetType().
+                                    GetProperty(containingTypeOfPropertyInstance.
+                                    getIdPropertyName()).PropertyType);
+
+            string createQuery = "create table " + tableName + "(" + pkName + " " + 
+                                pkDataTypeName + " ," + fkName + " " + fkDataTypeName + ", " + 
+                                "primary key(" + pkName + "," + fkName + "))";
+
+            DataBase.Instance.ejecutarConsulta(createQuery);
+        }
+
+        private List<string> getOneToManyProperties(Serializable objeto)
+        {
+            return objeto.oneToMany.Keys.ToList();
         }
 
         private void createForeignKeys(Serializable objeto)
