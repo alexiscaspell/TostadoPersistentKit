@@ -14,8 +14,10 @@ namespace TostadoPersistentKit
 
         //internal PrimaryKeyType primaryKetyType;
 
-        internal Dictionary<String, String> mappings = new Dictionary<string, string>();
-        internal Dictionary<String, String> oneToMany = new Dictionary<string, string>();
+        private Dictionary<String, String> mappings = new Dictionary<string, string>();
+        private Dictionary<String, String> oneToMany = new Dictionary<string, string>();
+        private Dictionary<String, FetchType> fetchTypes = new Dictionary<string, FetchType>();
+
         //internal Dictionary<String, String> manyToOne = new Dictionary<string, string>();
 
         //Este metodo inicializa el diccionario mappings, con key=nombre propiedad y value=nombre modelo de datos
@@ -28,7 +30,7 @@ namespace TostadoPersistentKit
         //Setea un enum que indica que tipo de pk es
         internal abstract PrimaryKeyType getPrimaryKeyType();
 
-        internal abstract FetchType getFetchType();
+        //internal abstract FetchType getFetchType();
 
         private String getMapFromVal(Dictionary<string,string> dictionary,String value)
         {
@@ -86,6 +88,32 @@ namespace TostadoPersistentKit
         internal bool isOneToManyProperty(string propertyName)
         {
             return oneToMany.ContainsKey(propertyName);
+        }
+
+        internal FetchType getFetchType(string propertyName)
+        {
+            //Como default retorno lazy
+            return fetchTypes.ContainsKey(propertyName) ? fetchTypes[propertyName] : FetchType.LAZY;
+        }
+
+        internal List<String> getOneToManyPropertyNames()
+        {
+            return oneToMany.Keys.ToList();
+        }
+
+        internal void addMap(String propertyName,String dataName)
+        {
+            mappings.Add(propertyName, dataName);
+        }
+
+        internal void addOneToManyMap(String propertyName, String dataName)
+        {
+            oneToMany.Add(propertyName, dataName);
+        }
+
+        internal void addFetchType(String propertyName,FetchType fetchType)
+        {
+            fetchTypes.Add(propertyName, fetchType);
         }
 
         public Serializable()

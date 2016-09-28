@@ -68,7 +68,9 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
         {
             List<string> listTables = new List<string>();
 
-            objeto.oneToMany.Keys.ToList().
+
+
+            objeto.getOneToManyPropertyNames().
                     ForEach(property => listTables.Add(objeto.getOneToManyTable(property)));
 
             return listTables;
@@ -132,7 +134,7 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
 
         private void createOneToManyTables(Serializable objeto)
         {
-            foreach (var item in getOneToManyProperties(objeto))
+            foreach (var item in objeto.getOneToManyPropertyNames())
             {
                 if (!existsTable(objeto.getOneToManyTable(item)))
                 {
@@ -166,11 +168,6 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
                                 "primary key(" + pkName + "," + fkName + "))";
 
             DataBase.Instance.ejecutarConsulta(createQuery);
-        }
-
-        private List<string> getOneToManyProperties(Serializable objeto)
-        {
-            return objeto.oneToMany.Keys.ToList();
         }
 
         private void createForeignKeys(Serializable objeto)

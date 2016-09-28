@@ -39,41 +39,44 @@ namespace TostadoPersistentKit
             return returnValue(dictionaryList,modelClassType);
         }
 
-        internal void completeSerializableObject(Serializable incompleteObject)
+        private void completeSerializableObject(Serializable incompleteObject)
         {
             foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject))
             {
-                if (incompleteObject.isOneToManyProperty(item.Key))
+                if (incompleteObject.getFetchType(item.Key)==Serializable.FetchType.EAGER)
                 {
-                    completeOneToManyProperty(incompleteObject, item.Key);
-                }
-
-                if (typeof(Serializable).IsAssignableFrom(item.Value.GetType()))
-                {
-                    Serializable serializableProperty = (Serializable)item.Value;
-
-                    /*if (serializableProperty.getPrimaryKeyType()==Serializable.PrimaryKeyType.SURROGATE)
+                    if (incompleteObject.isOneToManyProperty(item.Key))
                     {
-                        object idValue = serializableProperty.GetType().
-                                        GetProperty(serializableProperty.getIdPropertyName()).
-                                        GetValue(serializableProperty);
-                        int idIntValue = (int)getCastedValue(idValue, typeof(int));
+                        completeOneToManyProperty(incompleteObject, item.Key);
+                    }
 
-                        if (idIntValue==0)
+                    if (typeof(Serializable).IsAssignableFrom(item.Value.GetType()))
+                    {
+                        Serializable serializableProperty = (Serializable)item.Value;
+
+                        /*if (serializableProperty.getPrimaryKeyType()==Serializable.PrimaryKeyType.SURROGATE)
                         {
-                            return;
-                        }
-                    }*/
+                            object idValue = serializableProperty.GetType().
+                                            GetProperty(serializableProperty.getIdPropertyName()).
+                                            GetValue(serializableProperty);
+                            int idIntValue = (int)getCastedValue(idValue, typeof(int));
 
-                    Type propertyType = serializableProperty.GetType();
+                            if (idIntValue==0)
+                            {
+                                return;
+                            }
+                        }*/
 
-                    object propertyId = propertyType.GetProperty(serializableProperty.
-                                                getIdPropertyName()).GetValue(serializableProperty);
+                        Type propertyType = serializableProperty.GetType();
+
+                        object propertyId = propertyType.GetProperty(serializableProperty.
+                                                    getIdPropertyName()).GetValue(serializableProperty);
 
 
-                     serializableProperty = (Serializable)selectById(propertyId,propertyType);
+                        serializableProperty = (Serializable)selectById(propertyId, propertyType);
 
-                    incompleteObject.GetType().GetProperty(item.Key).SetValue(incompleteObject, serializableProperty);
+                        incompleteObject.GetType().GetProperty(item.Key).SetValue(incompleteObject, serializableProperty);
+                    }
                 }
             }
         }
@@ -134,9 +137,9 @@ namespace TostadoPersistentKit
 
                 foreach (var item in mappedList)
                 {
-                    Serializable.FetchType fetchType = ((Serializable)item).getFetchType();
+                    //Serializable.FetchType fetchType = ((Serializable)item).getFetchType();
 
-                    if (fetchType == Serializable.FetchType.EAGER)
+                    //if (fetchType == Serializable.FetchType.EAGER)
                     {
                         completeSerializableObject((Serializable)item);
                     }
