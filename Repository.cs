@@ -10,9 +10,10 @@ namespace TostadoPersistentKit
         //Esto me dice si se va a mapear sola la clase o a mano, se puede cambiar en cualquier momento
         internal Boolean autoMapping = true;
 
-        //internal Type modelClassType;
-
-        //Esto setea la clase que el repositorio va a tener como modelo para mapear
+        /// <summary>
+        /// retorna la clase que el repositorio va a tener como modelo para mapear
+        /// </summary>
+        /// <returns></returns>
         internal abstract Type getModelClassType();
 
         internal object executeStored(String storedProcedure,List<SqlParameter> parameters)
@@ -53,19 +54,6 @@ namespace TostadoPersistentKit
                     if (typeof(Serializable).IsAssignableFrom(item.Value.GetType()))
                     {
                         Serializable serializableProperty = (Serializable)item.Value;
-
-                        /*if (serializableProperty.getPrimaryKeyType()==Serializable.PrimaryKeyType.SURROGATE)
-                        {
-                            object idValue = serializableProperty.GetType().
-                                            GetProperty(serializableProperty.getIdPropertyName()).
-                                            GetValue(serializableProperty);
-                            int idIntValue = (int)getCastedValue(idValue, typeof(int));
-
-                            if (idIntValue==0)
-                            {
-                                return;
-                            }
-                        }*/
 
                         Type propertyType = serializableProperty.GetType();
 
@@ -137,12 +125,7 @@ namespace TostadoPersistentKit
 
                 foreach (var item in mappedList)
                 {
-                    //Serializable.FetchType fetchType = ((Serializable)item).getFetchType();
-
-                    //if (fetchType == Serializable.FetchType.EAGER)
-                    {
-                        completeSerializableObject((Serializable)item);
-                    }
+                    completeSerializableObject((Serializable)item);
                 }
 
                 return mappedList;
@@ -171,7 +154,7 @@ namespace TostadoPersistentKit
 
                 if (propertyName != "")
                 {
-                    Type propertyType = objeto.GetType().GetProperty(propertyName).PropertyType;//.GetType();
+                    Type propertyType = objeto.GetType().GetProperty(propertyName).PropertyType;
 
                     bool isSerializable = typeof(Serializable).IsAssignableFrom(propertyType);
 
@@ -204,13 +187,6 @@ namespace TostadoPersistentKit
 
         private object getCastedValue(object value, Type expectedType)
         {
-            /*bool isTypeChar = typeof(char).IsAssignableFrom(expectedType);
-
-            if (isTypeChar)
-            {
-                return value.ToString()[0];
-            }*/
-
             return Convert.ChangeType(value, expectedType);
         }
 
@@ -432,7 +408,7 @@ namespace TostadoPersistentKit
 
             foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
             {
-                if (keyValuePair.Key != primaryKeyPropertyName)// || objeto.primaryKetyType == Serializable.PrimaryKeyType.NATURAL)
+                if (keyValuePair.Key != primaryKeyPropertyName)
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 

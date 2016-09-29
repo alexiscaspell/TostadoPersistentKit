@@ -12,25 +12,33 @@ namespace TostadoPersistentKit
         internal enum PrimaryKeyType { SURROGATE,NATURAL}
         internal enum FetchType { EAGER,LAZY}
 
-        //internal PrimaryKeyType primaryKetyType;
-
         private Dictionary<String, String> mappings = new Dictionary<string, string>();
         private Dictionary<String, String> oneToMany = new Dictionary<string, string>();
         private Dictionary<String, FetchType> fetchTypes = new Dictionary<string, FetchType>();
 
-        //internal Dictionary<String, String> manyToOne = new Dictionary<string, string>();
-
-        //Este metodo inicializa el diccionario mappings, con key=nombre propiedad y value=nombre modelo de datos
+        
+        /// <summary>
+        /// en este metodo se ejecutan los metodos addMap,addFetchType y addOneToManyMap
+        /// </summary>
         internal abstract void map();
 
+        /// <summary>
+        /// retorna el nombre de la propiedad que representa la pk
+        /// </summary>
+        /// <returns></returns>
         internal abstract string getIdPropertyName();
 
+        /// <summary>
+        /// retorna el nombre de la tabla que se mapea en el modelo de datos
+        /// </summary>
+        /// <returns></returns>
         internal abstract string getTableName();
 
-        //Setea un enum que indica que tipo de pk es
+        /// <summary>
+        /// retorna el tipo de pk del modelo de datos
+        /// </summary>
+        /// <returns></returns>
         internal abstract PrimaryKeyType getPrimaryKeyType();
-
-        //internal abstract FetchType getFetchType();
 
         private String getMapFromVal(Dictionary<string,string> dictionary,String value)
         {
@@ -101,16 +109,37 @@ namespace TostadoPersistentKit
             return oneToMany.Keys.ToList();
         }
 
+        /// <summary>
+        /// agrega el mapeo de una propiedad con una columna de una tabla
+        /// </summary>
+        /// <param name="propertyName">
+        /// nombre de la propiedad</param>
+        /// <param name="dataName">
+        /// nombre de la columa del modelo de datos</param>
         internal void addMap(String propertyName,String dataName)
         {
             mappings.Add(propertyName, dataName);
         }
 
+        /// <summary>
+        ///Agrega relacion oneToMany a cierta propiedad
+        /// </summary>
+        /// <param name="propertyName">
+        /// nombre de la propiedad</param>
+        /// <param name="dataName">
+        /// esta compuesto de idPk.table.idFk</param>
         internal void addOneToManyMap(String propertyName, String dataName)
         {
             oneToMany.Add(propertyName, dataName);
         }
 
+        /// <summary>
+        /// Agrega el tipo de busqueda de una propiedad (por default es lazy)
+        /// </summary>
+        /// <param name="propertyName">
+        /// nombre de la propiedad</param>
+        /// <param name="fetchType">
+        /// tipod de busqueda</param>
         internal void addFetchType(String propertyName,FetchType fetchType)
         {
             fetchTypes.Add(propertyName, fetchType);
