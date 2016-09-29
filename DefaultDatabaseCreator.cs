@@ -40,18 +40,28 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
 
             foreach (var item in dictionaryObjectsAndTypes.Values)
             {
-                getOneToManyTables(item).ForEach(table => oneToManyTables.Add(table));
+                foreach (string tableName in getOneToManyTables(item))
+                {
+                    if (!oneToManyTables.Contains(tableName))
+                    {
+                        oneToManyTables.Add(tableName);
+                    }
+                }
             }
 
             //Este while sirve para ir borrando las tablas varias veces, porque algunas no
             //se borran a la primera por las fks
-            while (dictionaryObjectsAndTypes.Values.Any(o=>existsTable(o.getTableName()))&& oneToManyTables.Any(table => existsTable(table)))
+            while (dictionaryObjectsAndTypes.Values.Any(o=>existsTable(o.getTableName())) || oneToManyTables.Any(table => existsTable(table)))
             {
                 foreach (var item in oneToManyTables)//Borro tablas intermedias
                 {
                     if (existsTable(item))
                     {
                         dropTable(item);
+                    }
+                    else
+                    {
+                            
                     }
                 }
                 foreach (var item in dictionaryObjectsAndTypes.Values)//Borro tablas
@@ -136,7 +146,9 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
         {
             foreach (var item in objeto.getOneToManyPropertyNames())
             {
-                if (!existsTable(objeto.getOneToManyTable(item)))
+                string tableName = objeto.getOneToManyTable(item);
+
+                if (!existsTable(tableName))
                 {
                     createOneToManyTable(objeto, item);
                 }
@@ -173,7 +185,7 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
         private void createForeignKeys(Serializable objeto)
         {
             int serializablePropertyCounter = listProperties(objeto).Count(property => 
-                                                isSerializableProperty(property, objeto));
+                                                isSerializableProperty(property, objeto)&&objeto.getMapFromKey(property)!="");
 
             if (serializablePropertyCounter==0)
             {
@@ -188,7 +200,7 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
             {
                 Type propertyType = getPropertyType(item, objeto);
 
-                if (isSerializableProperty(item,objeto))
+                if (isSerializableProperty(item,objeto)&& objeto.getMapFromKey(item) != "")
                 {
                     Serializable property = dictionaryObjectsAndTypes[propertyType];
                     Type idPropertyType = getPropertyType(property.getIdPropertyName(), property);
@@ -219,7 +231,7 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
                 {
                     String dataType = getDataTypeName(getPropertyType(item, objeto));
 
-                    if (dataType!="")
+                    if (dataType!=""&& objeto.getMapFromKey(item)!="")
                     {
                         createQuery += objeto.getMapFromKey(item) + " " + dataType;
 
