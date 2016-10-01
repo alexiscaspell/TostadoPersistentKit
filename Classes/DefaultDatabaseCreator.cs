@@ -192,6 +192,22 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
                 return;
             }
 
+            bool existsFkEqualToPk = listProperties(objeto).Exists(prop => 
+                                    objeto.getMapFromKey(prop) == objeto.getMapFromKey(objeto.getIdPropertyName()) 
+                                    && typeof(Serializable).IsAssignableFrom(getPropertyType(prop, objeto)));
+
+            //Este es el caso en el que la pk sea una fk y que solo haya 1 fk
+            if (serializablePropertyCounter == 1 && existsFkEqualToPk)
+            {
+                Serializable property = dictionaryObjectsAndTypes[getPropertyType(listProperties(objeto)[0], objeto)];
+                DataBase.Instance.ejecutarConsulta("alter table "+ objeto.getTableName()+
+                                    " add foreign key("+objeto.getMapFromKey(objeto.getIdPropertyName())+
+                                    ") references "+property.getTableName()+"("+
+                                    property.getMapFromKey(property.getIdPropertyName())+")");
+
+                return;
+            }
+
             string alterQuery = "alter table " + objeto.getTableName()+" add ";
 
             string foreignKeys = "";
@@ -209,7 +225,11 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
                     string foreignKeyProperty = objeto.getMapFromKey(item);
                     string tableNameProperty = property.getTableName();
 
-                    alterQuery += foreignKeyProperty + " " + getDataTypeName(idPropertyType) + ",";
+                    if (objeto.getMapFromKey(item)!=objeto.getMapFromKey(objeto.getIdPropertyName()))//Si es la pk, ya se inserto
+                    {
+                        alterQuery += foreignKeyProperty + " " + getDataTypeName(idPropertyType) + ",";
+                    }
+
                     foreignKeys += "foreign key(" + foreignKeyProperty + ") references " 
                                     + tableNameProperty + "(" + primaryKeyProperty + "),";
                 }
@@ -223,6 +243,11 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
 
         private void createIncompleteTable(Serializable objeto)
         {
+            if (existsTable(objeto.getTableName()))
+            {
+                return;
+            }
+
             string createQuery = "create table " + objeto.getTableName() + "(";
 
             foreach (var item in listProperties(objeto))
@@ -318,7 +343,7 @@ namespace UsingTostadoPersistentKit.TostadoPersistentKit
         private bool existsTable(String tableName)
         {
             string existsQuery = "if EXISTS(SELECT * FROM sysobjects  WHERE name = '" +
-                tableName + "') select 1 as value else select 0 as value";
+                tableName.Split('.')[tableName.Split('.').Length-1] + "') select 1 as value else select 0 as value";
 
             return Convert.ToBoolean(DataBase.Instance.ejecutarConsulta(existsQuery)[0]["value"]);
         }
