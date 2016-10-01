@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using TostadoPersistentKit;
 
-namespace UsingTostadoPersistentKit.TostadoPersistentKit
+namespace TostadoPersistentKit
 {
     public class DefaultDatabaseCreator
     {

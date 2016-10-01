@@ -1,7 +1,7 @@
 ﻿using System;
 using static TostadoPersistentKit.Serializable;
 
-namespace UsingTostadoPersistentKit.TostadoPersistentKit
+namespace TostadoPersistentKit
 {
     public class Id:Column
     {
