@@ -10,7 +10,7 @@ Conjunto de clases programadas en C# para facilitar el uso de bd
 
 ####Esta clase abstracta la tiene que implementar cualquier dao, aca unas aclaraciones :
 
-- Para usarse se tiene que especificar de que clase va a ser el repositorio, esto se hace implementando el metodo getModelClassType retornando typeof(ClaseQueMapeo).
+- Para usarse se tiene que especificar a que clase va a hacerse de repositorio, esto se hace implementando el metodo getModelClassType retornando typeof(ClaseQueMapeo).
 
 - Repository de por si ya tiene hechos los metodos insert,update,delete y algunos select
 
@@ -37,8 +37,8 @@ Conjunto de clases programadas en C# para facilitar el uso de bd
 
 ###Aclaraciones :
 
-- Si se tiene una propiedad que no es del tipo Serializable o no se especifico un FetchType, este sera por valor default LAZY.
-- Si se tiene una relacion ManyToMany con una propiedad, se la implementa con la annotation OneToMany.
+- Si se tiene una propiedad que es Serializable y no se especifico un FetchType, este sera por valor default LAZY.
+- Si se tiene una relacion ManyToMany con una propiedad, se la implementa con la annotation OneToMany (Esto por ahora NO funciona)
 - Repository contiene ademas los metodos insertCascade y updateCascade que realizan un insert/update recursivo (A excepcion de las propiedades OneToMany)
 
 
