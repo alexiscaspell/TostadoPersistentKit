@@ -2,17 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using UsingTostadoPersistentKit.TostadoPersistentKit;
 
 namespace TostadoPersistentKit
 {
     public abstract class Serializable
     {
 
-        public enum PrimaryKeyType { SURROGATE,NATURAL}
-        public enum FetchType { EAGER,LAZY}
+        public enum PrimaryKeyType { SURROGATE, NATURAL }
+        public enum FetchType { EAGER, LAZY }
 
         private Dictionary<String, String> mappings = new Dictionary<string, string>();
         private Dictionary<String, String> oneToMany = new Dictionary<string, string>();
@@ -48,7 +45,7 @@ namespace TostadoPersistentKit
             return primaryKeyType;
         }
 
-        private String getMapFromVal(Dictionary<string,string> dictionary,String value)
+        private String getMapFromVal(Dictionary<string, string> dictionary, String value)
         {
             foreach (KeyValuePair<String, String> keyValuePair in dictionary)
             {
@@ -61,7 +58,7 @@ namespace TostadoPersistentKit
             return "";
         }
 
-        private String getMapFromKey(Dictionary<string,string> dictionary,String key)
+        private String getMapFromKey(Dictionary<string, string> dictionary, String key)
         {
             if (dictionary.ContainsKey(key))
             {
@@ -125,7 +122,7 @@ namespace TostadoPersistentKit
         /// <param name="dataName">
         /// nombre de la columa del modelo de datos</param>
         [Obsolete]
-        internal void addMap(String propertyName,String dataName)
+        internal void addMap(String propertyName, String dataName)
         {
             mappings.Add(propertyName, dataName);
         }
@@ -151,7 +148,7 @@ namespace TostadoPersistentKit
         /// <param name="fetchType">
         /// tipod de busqueda</param>
         [Obsolete]
-        internal void addFetchType(String propertyName,FetchType fetchType)
+        internal void addFetchType(String propertyName, FetchType fetchType)
         {
             fetchTypes.Add(propertyName, fetchType);
         }
@@ -170,13 +167,13 @@ namespace TostadoPersistentKit
             {
                 foreach (Attribute attribute in propertyInfo.GetCustomAttributes(false))
                 {
-                    mapAttributeInformation(propertyInfo.Name,attribute);
+                    mapAttributeInformation(propertyInfo.Name, attribute);
                 }
             }
 
             List<CustomAttributeData> classAttributes = GetType().CustomAttributes.ToList();
 
-            if (classAttributes.Exists(a=>a.AttributeType==typeof(Table)))//Mapeo nombre de tabla
+            if (classAttributes.Exists(a => a.AttributeType == typeof(Table)))//Mapeo nombre de tabla
             {
                 string tableNameAnnotatedValue = classAttributes[0].NamedArguments[0].TypedValue.Value.ToString();
 
@@ -203,7 +200,7 @@ namespace TostadoPersistentKit
                 }
             }
 
-            if (annotation.GetType()==typeof(Id))
+            if (annotation.GetType() == typeof(Id))
             {
                 Id idAtt = (Id)annotation;
 
@@ -212,6 +209,74 @@ namespace TostadoPersistentKit
             }
 
             mappings.Add(propertyName, ((MappingAttribute)annotation).name);
+        }
+
+        internal object getDataValue(string dataName)
+        {
+            List<PropertyInfo> listPropertyInfo = GetType().GetProperties().ToList();
+
+            bool containsProperty = listPropertyInfo.Exists(o => getMapFromKey(o.Name) == dataName);
+
+            if (containsProperty)
+            {
+                return listPropertyInfo.Find(o => getMapFromKey(o.Name) == dataName).GetValue(this);
+            }
+
+            foreach (PropertyInfo item in listPropertyInfo)
+            {
+                Type propertyType = item.PropertyType;
+
+                if (typeof(Serializable).IsAssignableFrom(propertyType))
+                {
+                    object propertyInstance = item.GetValue(this);
+
+                    if (propertyInstance != null)
+                    {
+                        object value = ((Serializable)propertyInstance).getDataValue(dataName);
+
+                        if (value != null)
+                        {
+                            return value;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
+        internal object getPropertyValue(string propertyName)
+        {
+            List<PropertyInfo> listPropertyInfo = GetType().GetProperties().ToList();
+
+            bool containsProperty = listPropertyInfo.Exists(o => o.Name == propertyName);
+
+            if (containsProperty)
+            {
+                return listPropertyInfo.Find(o => o.Name == propertyName).GetValue(this);
+            }
+
+            foreach (PropertyInfo item in listPropertyInfo)
+            {
+                Type propertyType = item.PropertyType;
+
+                if (typeof(Serializable).IsAssignableFrom(propertyType))
+                {
+                    object propertyInstance = item.GetValue(this);
+
+                    if (propertyInstance!=null)
+                    {
+                        object value = ((Serializable)propertyInstance).getPropertyValue(propertyName);
+
+                        if (value!=null)
+                        {
+                            return value;
+                        }
+                    }
+                }
+            }
+
+            return null;
         }
     }
 }

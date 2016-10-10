@@ -16,6 +16,46 @@ namespace TostadoPersistentKit
         /// <returns></returns>
         internal abstract Type getModelClassType();
 
+        private List<string> getProcedureParameterNames(String storedProcedure)
+        {
+            List<string> parameterNames = new List<string>();
+
+            string query = "SELECT * FROM INFORMATION_SCHEMA.PARAMETERS " +
+                            "WHERE SPECIFIC_NAME = " +"'"+ storedProcedure +"'"+
+                            " ORDER BY SPECIFIC_NAME, ORDINAL_POSITION";
+
+            foreach (Dictionary<string, object> item in DataBase.Instance.ejecutarConsulta(query))
+            {
+                parameterNames.Add(item["PARAMETER_NAME"].ToString().Split('@')[1]);
+            }
+
+            return parameterNames;
+        }
+
+        internal object executeStored(String storedProcedure, Serializable objeto)
+        {
+            return executeStored(storedProcedure, objeto, new List<SqlParameter>());
+        }
+
+        internal object executeStored(String storedProcedure,Serializable objeto,List<SqlParameter> extraParameters)
+        {
+            List<string> parameterNames = getProcedureParameterNames(storedProcedure);
+
+            List<SqlParameter> parameters = new List<SqlParameter>();
+
+            extraParameters.ForEach(o => parameterNames.Remove(o.ParameterName));
+
+            extraParameters.ForEach(o => parameters.Add(o));
+
+            foreach (string parameterName in parameterNames)
+            {
+                DataBase.Instance.agregarParametro(parameters, parameterName,
+                                objeto.getDataValue(parameterName));
+            }
+
+            return executeStored(storedProcedure, parameters);
+        }
+
         internal object executeStored(String storedProcedure,List<SqlParameter> parameters)
         {
             return executeStored(storedProcedure,parameters,getModelClassType());
