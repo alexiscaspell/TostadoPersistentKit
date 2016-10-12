@@ -20,9 +20,12 @@ namespace TostadoPersistentKit
         {
             List<string> parameterNames = new List<string>();
 
-            string query = "SELECT * FROM INFORMATION_SCHEMA.PARAMETERS " +
-                            "WHERE SPECIFIC_NAME = " +"'"+ storedProcedure +"'"+
-                            " ORDER BY SPECIFIC_NAME, ORDINAL_POSITION";
+
+
+            string query = "SELECT * FROM INFORMATION_SCHEMA.PARAMETERS "
+                            + "WHERE SPECIFIC_NAME = " + "'"
+                            + storedProcedure.Split('.')[storedProcedure.Split('.').Length - 1] + "'"
+                            + " ORDER BY SPECIFIC_NAME, ORDINAL_POSITION";
 
             foreach (Dictionary<string, object> item in DataBase.Instance.ejecutarConsulta(query))
             {
@@ -49,8 +52,21 @@ namespace TostadoPersistentKit
 
             foreach (string parameterName in parameterNames)
             {
-                DataBase.Instance.agregarParametro(parameters, parameterName,
-                                objeto.getDataValue(parameterName));
+                object dataValue = objeto.getDataValue(parameterName);
+
+                if (dataValue!=null)
+                {
+                    if (typeof(Serializable).IsAssignableFrom(dataValue.GetType()))
+                    {
+                        Serializable serializableProperty = (Serializable)dataValue;
+                        dataValue = serializableProperty.getDataValue(serializableProperty
+                                                            .getMapFromKey(serializableProperty
+                                                            .getIdPropertyName()));
+                    }
+
+                }
+
+                DataBase.Instance.agregarParametro(parameters, parameterName, dataValue);
             }
 
             return executeStored(storedProcedure, parameters);

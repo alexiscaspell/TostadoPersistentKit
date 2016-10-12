@@ -79,21 +79,21 @@ namespace TostadoPersistentKit
 
         internal String getOneToManyTable(String key)
         {
-            string[] result = getMapFromKey(oneToMany, key).Split('.');
+            string[] result = getMapFromKey(oneToMany, key).Split('@');
 
             return result.Count() > 1 ? result[1] : "";
         }
 
         internal String getOneToManyPk(String key)
         {
-            string[] result = getMapFromKey(oneToMany, key).Split('.');
+            string[] result = getMapFromKey(oneToMany, key).Split('@');
 
             return result.Count() > 0 ? result[0] : "";
         }
 
         internal String getOneToManyFk(String key)
         {
-            string[] result = getMapFromKey(oneToMany, key).Split('.');
+            string[] result = getMapFromKey(oneToMany, key).Split('@');
 
             return result.Count() > 2 ? result[2] : "";
         }
@@ -194,8 +194,8 @@ namespace TostadoPersistentKit
                 {
                     OneToMany oneToManyAtt = (OneToMany)annotation;
 
-                    oneToMany.Add(propertyName, oneToManyAtt.pkName + "." +
-                                        oneToManyAtt.tableName + "." + oneToManyAtt.fkName);
+                    oneToMany.Add(propertyName, oneToManyAtt.pkName + "@" +
+                                        oneToManyAtt.tableName + "@" + oneToManyAtt.fkName);
                     return;
                 }
             }
