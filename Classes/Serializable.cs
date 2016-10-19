@@ -7,10 +7,6 @@ namespace TostadoPersistentKit
 {
     public abstract class Serializable
     {
-
-        public enum PrimaryKeyType { SURROGATE, NATURAL }
-        public enum FetchType { EAGER, LAZY }
-
         private Dictionary<String, String> mappings = new Dictionary<string, string>();
         private Dictionary<String, String> oneToMany = new Dictionary<string, string>();
         private Dictionary<String, FetchType> fetchTypes = new Dictionary<string, FetchType>();

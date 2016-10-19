@@ -1,5 +1,4 @@
 ﻿using System;
-using static TostadoPersistentKit.Serializable;
 
 namespace TostadoPersistentKit
 {

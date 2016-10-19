@@ -100,7 +100,7 @@ namespace TostadoPersistentKit
         {
             foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject))
             {
-                if (incompleteObject.getFetchType(item.Key)==Serializable.FetchType.EAGER)
+                if (incompleteObject.getFetchType(item.Key)==FetchType.EAGER)
                 {
                     if (incompleteObject.isOneToManyProperty(item.Key))
                     {
@@ -323,7 +323,7 @@ namespace TostadoPersistentKit
 
             foreach (KeyValuePair<string, object> keyValuePair in propertyValues)
             {
-                if (keyValuePair.Key != primaryKeyPropertyName || objeto.getPrimaryKeyType() == Serializable.PrimaryKeyType.NATURAL)
+                if (keyValuePair.Key != primaryKeyPropertyName || objeto.getPrimaryKeyType() == PrimaryKeyType.NATURAL)
                 {
                     String dataName = objeto.getMapFromKey(keyValuePair.Key);
 
@@ -402,7 +402,7 @@ namespace TostadoPersistentKit
             return selectByProperty(propertyName, propertyValue, getModelClassType());
         }
 
-        private List<object> selectByProperty(string propertyName, object propertyValue, Type classType)
+        internal List<object> selectByProperty(string propertyName, object propertyValue, Type classType)
         {
             Serializable objeto = (Serializable)Activator.CreateInstance(classType);
 
@@ -433,13 +433,15 @@ namespace TostadoPersistentKit
 
         internal List<object> selectAll()
         {
-            Serializable objeto = (Serializable)Activator.CreateInstance(getModelClassType());
-
-            return selectAll(objeto.getTableName(),getModelClassType());
+            return selectAll(getModelClassType());
         }
 
-        private List<object> selectAll(String tableName,Type classType)
+        internal List<object> selectAll(Type classType)
         {
+            Serializable objeto = (Serializable)Activator.CreateInstance(classType);
+
+            String tableName = objeto.getTableName();
+
             List<SqlParameter> parameters = new List<SqlParameter>();
 
             String selectQuery = "select * from " + tableName;
