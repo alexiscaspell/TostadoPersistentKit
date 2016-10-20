@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Reflection;
 
 namespace TostadoPersistentKit
@@ -98,7 +100,7 @@ namespace TostadoPersistentKit
 
         private void completeSerializableObject(Serializable incompleteObject)
         {
-            foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject))
+            foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject,true))
             {
                 if (incompleteObject.getFetchType(item.Key)==FetchType.EAGER)
                 {
@@ -107,7 +109,7 @@ namespace TostadoPersistentKit
                         completeOneToManyProperty(incompleteObject, item.Key);
                     }
 
-                    if (typeof(Serializable).IsAssignableFrom(item.Value.GetType()))
+                    if (typeof(Serializable).IsAssignableFrom(incompleteObject.GetType().GetProperty(item.Key).PropertyType))
                     {
                         Serializable serializableProperty = (Serializable)item.Value;
 
@@ -159,6 +161,14 @@ namespace TostadoPersistentKit
             }
 
             query += conditionQuery;
+
+            Type listType = incompleteObject.GetType().GetProperty(propertyName).PropertyType;
+
+            object dummyList = Activator.CreateInstance(listType);
+
+            //Asigno una lista vacia a la propiedad
+            incompleteObject.GetType().GetProperty(propertyName).
+                            SetValue(incompleteObject, dummyList);
 
             foreach (var item in (List<object>)executeQuery(query, null, containingTypeOfProperty))
             {
@@ -279,7 +289,12 @@ namespace TostadoPersistentKit
             return serializableProperties;
         }
 
-        private Dictionary<string,object> getPropertyValues(Serializable objeto)
+        private Dictionary<string, object> getPropertyValues(Serializable objeto)
+        {
+            return getPropertyValues(objeto, false);
+        }
+
+        private Dictionary<string,object> getPropertyValues(Serializable objeto,bool nullValuesPermited)
         {
             Dictionary<string, object> dictionary = new Dictionary<string, object>();
 
@@ -291,7 +306,7 @@ namespace TostadoPersistentKit
 
                     object propertyValue = ((PropertyInfo)info).GetValue(objeto);
 
-                    if (propertyValue!=null)
+                    if (propertyValue!=null||nullValuesPermited)
                     {
                         dictionary.Add(propertyName, propertyValue);
                     }
@@ -366,6 +381,58 @@ namespace TostadoPersistentKit
             object idValue = getCastedValue(insertResult, idType);
 
             objeto.GetType().GetProperty(objeto.getIdPropertyName()).SetValue(objeto, idValue);
+
+            foreach (var item in objeto.getOneToManyPropertyNames())
+            {
+                insertOneToManyProperty(objeto, item,cascade);
+            }
+        }
+
+        private void insertOneToManyProperty(Serializable objeto, string propertyName,bool cascade)
+        {
+            Type propertyType = objeto.getOneToManyPropertyType(propertyName);
+
+            string propertyTable = ((Serializable)Activator.CreateInstance(propertyType)).getTableName();
+
+            string oneToManyTable = objeto.getOneToManyTable(propertyName);
+
+            bool isCharPk = typeof(string).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType()) 
+                            || typeof(char).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType());
+
+            string expectedPk = isCharPk ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : 
+                                objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
+
+            foreach (var item in (IEnumerable)objeto.getPropertyValue(propertyName))
+            {
+                Serializable serializableItem = (Serializable)item;
+
+                bool isCharFk = typeof(string).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType())
+                                || typeof(char).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType());
+
+                string expectedFk = isCharPk ? "'" + serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString() + "'" :
+                                    serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString();
+
+                string query = "";
+
+                if (propertyTable==oneToManyTable)
+                {
+                    if (cascade)
+                    {
+                        insert(serializableItem, serializableItem.getIdPropertyName(), propertyTable, cascade);
+                    }
+
+                    query = "update " + propertyTable + " set " + objeto.getOneToManyPk(propertyName) + "=" + expectedPk +
+                                        "where " + objeto.getOneToManyFk(propertyName) + "=" + expectedFk;
+                }
+                else
+                {
+                    query = "insert into " + oneToManyTable + "(" + objeto.getOneToManyPk(propertyName) + 
+                            "," + objeto.getOneToManyFk(propertyName) + ") values(" + expectedPk + "," + 
+                            expectedFk + ")";
+                }
+
+                DataBase.Instance.ejecutarConsulta(query);
+            }
         }
 
         internal void delete(Serializable objeto)
@@ -512,6 +579,57 @@ namespace TostadoPersistentKit
             }
 
             DataBase.Instance.ejecutarConsulta(updateQuery, parametros);
+
+            foreach (var item in objeto.getOneToManyPropertyNames())
+            {
+                updateOneToManyProperty(objeto, item, cascadeMode);
+            }
+        }
+
+        private void updateOneToManyProperty(Serializable objeto, string propertyName, bool cascadeMode)
+        {
+            object propertyList = objeto.getPropertyValue(propertyName);
+
+            //SI es cascade updateo cada elemento de la propiedad oneToMany
+            if (cascadeMode)
+            {
+                foreach (var item in (IEnumerable)propertyList)
+                {
+                    updateCascade((Serializable)item);
+                }
+            }
+
+            object notExistentFkObjects = Activator.CreateInstance(objeto.getPropertyType(propertyName));
+            List<object> existentFks = new List<object>();
+
+            bool isCharObject = typeof(string).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName())) || typeof(char).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName()));
+
+            string expected = isCharObject ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
+
+            string existentFksQuery = "select " + objeto.getOneToManyFk(propertyName)
+                                    + " from " + objeto.getOneToManyTable(propertyName) + " where " 
+                                    + objeto.getOneToManyPk(propertyName) + "=" + expected;
+
+            foreach (Dictionary<string,object> item in DataBase.Instance.ejecutarConsulta(existentFksQuery))
+            {
+                existentFks.Add(item[objeto.getOneToManyFk(propertyName)]);
+            }
+
+            foreach (var item in (IEnumerable)propertyList)
+            {
+                if (!existentFks.Contains(((Serializable)item).getPropertyValue(((Serializable)item).getIdPropertyName())))
+                {
+                    List<object> parameters = new List<object> { item };
+                    notExistentFkObjects.GetType().GetMethod("Add").Invoke(notExistentFkObjects, parameters.ToArray());
+                }
+            }
+
+            //Seteo lista filtrada
+            objeto.GetType().GetProperty(propertyName).SetValue(objeto,notExistentFkObjects);
+
+            insertOneToManyProperty(objeto, propertyName, false);
+            //Dejo todo como estaba
+            objeto.GetType().GetProperty(propertyName).SetValue(objeto, propertyList);
         }
 
         internal void updateCascade(Serializable objeto)

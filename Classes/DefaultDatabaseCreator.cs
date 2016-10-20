@@ -182,10 +182,7 @@ namespace TostadoPersistentKit
 
         private void createOneToManyTable(Serializable objeto, string propertyName)
         {
-            Type containingTypeOfProperty = Assembly.GetExecutingAssembly().
-                                GetType(objeto.GetType().
-                                GetProperty(propertyName).PropertyType.
-                                ToString().Split('[')[1].Split(']')[0]);
+            Type containingTypeOfProperty = objeto.getOneToManyPropertyType(propertyName);
 
             Serializable containingTypeOfPropertyInstance = (Serializable)Activator.CreateInstance(containingTypeOfProperty);
 

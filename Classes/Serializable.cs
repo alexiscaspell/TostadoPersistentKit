@@ -207,6 +207,14 @@ namespace TostadoPersistentKit
             mappings.Add(propertyName, ((MappingAttribute)annotation).name);
         }
 
+        internal Type getOneToManyPropertyType(string propertyName)
+        {
+            return Assembly.GetExecutingAssembly().
+                                GetType(GetType().
+                                GetProperty(propertyName).PropertyType.
+                                ToString().Split('[')[1].Split(']')[0]);
+        }
+
         internal object getDataValue(string dataName)
         {
             List<PropertyInfo> listPropertyInfo = GetType().GetProperties().ToList();
@@ -273,6 +281,11 @@ namespace TostadoPersistentKit
             }
 
             return null;
+        }
+
+        internal Type getPropertyType(string propertyName)
+        {
+            return GetType().GetProperty(propertyName).PropertyType;
         }
     }
 }
