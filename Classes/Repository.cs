@@ -109,7 +109,7 @@ namespace TostadoPersistentKit
                         completeOneToManyProperty(incompleteObject, item.Key);
                     }
 
-                    if (typeof(Serializable).IsAssignableFrom(incompleteObject.GetType().GetProperty(item.Key).PropertyType))
+                    if (typeof(Serializable).IsAssignableFrom(incompleteObject.GetType().GetProperty(item.Key).PropertyType)&&item.Value!=null)
                     {
                         Serializable serializableProperty = (Serializable)item.Value;
 
@@ -143,9 +143,13 @@ namespace TostadoPersistentKit
             object currentIdValue = incompleteObject.GetType().GetProperty(incompleteObject.getIdPropertyName()).
                                     GetValue(incompleteObject);
 
-            bool isCharObject = typeof(string).IsAssignableFrom(currentIdValue.GetType()) || typeof(char).IsAssignableFrom(currentIdValue.GetType());
+            string expected = "@"+currentPrimaryKey;
+            List<SqlParameter> sqlParameters = new List<SqlParameter>();
+            DataBase.Instance.agregarParametro(sqlParameters, expected, currentIdValue);
 
-            string expected = isCharObject ? "'" + currentIdValue.ToString() + "'" : currentIdValue.ToString();
+            //bool isCharObject = typeof(string).IsAssignableFrom(currentIdValue.GetType()) || typeof(char).IsAssignableFrom(currentIdValue.GetType());
+
+            //string expected = isCharObject ? "'" + currentIdValue.ToString() + "'" : currentIdValue.ToString();
 
 
             string query = "select * from " + intermediateTable + " ";
@@ -170,7 +174,7 @@ namespace TostadoPersistentKit
             incompleteObject.GetType().GetProperty(propertyName).
                             SetValue(incompleteObject, dummyList);
 
-            foreach (var item in (List<object>)executeQuery(query, null, containingTypeOfProperty))
+            foreach (var item in (List<object>)executeQuery(query, sqlParameters, containingTypeOfProperty))
             {
                 List<object> parameters = new List<object> { item};
                 incompleteObject.GetType().GetProperty(propertyName).
@@ -396,21 +400,28 @@ namespace TostadoPersistentKit
 
             string oneToManyTable = objeto.getOneToManyTable(propertyName);
 
-            bool isCharPk = typeof(string).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType()) 
-                            || typeof(char).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType());
+            //bool isCharPk = typeof(string).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType()) 
+              //              || typeof(char).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType());
 
-            string expectedPk = isCharPk ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : 
-                                objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
+            //string expectedPk = isCharPk ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : 
+                                //objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
+
+            string expectedPk = "@" + objeto.getOneToManyPk(propertyName);
 
             foreach (var item in (IEnumerable)objeto.getPropertyValue(propertyName))
             {
                 Serializable serializableItem = (Serializable)item;
 
-                bool isCharFk = typeof(string).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType())
-                                || typeof(char).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType());
+                //bool isCharFk = typeof(string).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType())
+                                //|| typeof(char).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType());
 
-                string expectedFk = isCharPk ? "'" + serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString() + "'" :
-                                    serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString();
+                //string expectedFk = isCharPk ? "'" + serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString() + "'" :
+                                    //serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString();
+                string expectedFk = "@" + objeto.getOneToManyFk(propertyName);
+
+                List<SqlParameter> sqlParameters = new List<SqlParameter>();
+                DataBase.Instance.agregarParametro(sqlParameters, expectedPk, objeto.getPropertyValue(objeto.getIdPropertyName()));
+                DataBase.Instance.agregarParametro(sqlParameters, expectedFk, serializableItem.getPropertyValue(serializableItem.getIdPropertyName()));
 
                 string query = "";
 
@@ -475,9 +486,13 @@ namespace TostadoPersistentKit
 
             List<SqlParameter> parameters = new List<SqlParameter>();
 
-            bool isCharObject = typeof(string).IsAssignableFrom(propertyValue.GetType()) || typeof(char).IsAssignableFrom(propertyValue.GetType());
+            string expected = "@" + objeto.getMapFromKey(propertyName);
 
-            string expected = isCharObject ? "'" + propertyValue.ToString() + "'" : propertyValue.ToString();
+            DataBase.Instance.agregarParametro(parameters, expected, propertyValue);
+
+            //bool isCharObject = typeof(string).IsAssignableFrom(propertyValue.GetType()) || typeof(char).IsAssignableFrom(propertyValue.GetType());
+
+            //string expected = isCharObject ? "'" + propertyValue.ToString() + "'" : propertyValue.ToString();
 
             string selectQuery = "select * from " + objeto.getTableName() + " where " +
                                 objeto.getMapFromKey(propertyName) + "=" + expected;
@@ -602,15 +617,19 @@ namespace TostadoPersistentKit
             object notExistentFkObjects = Activator.CreateInstance(objeto.getPropertyType(propertyName));
             List<object> existentFks = new List<object>();
 
-            bool isCharObject = typeof(string).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName())) || typeof(char).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName()));
+            //bool isCharObject = typeof(string).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName())) || typeof(char).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName()));
 
-            string expected = isCharObject ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
+            //string expected = isCharObject ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
+
+            string expected = "@" + objeto.getOneToManyPk(propertyName);
+            List<SqlParameter> sqlParameters = new List<SqlParameter>();
+            DataBase.Instance.agregarParametro(sqlParameters, expected, objeto.getPropertyValue(objeto.getIdPropertyName()));
 
             string existentFksQuery = "select " + objeto.getOneToManyFk(propertyName)
                                     + " from " + objeto.getOneToManyTable(propertyName) + " where " 
                                     + objeto.getOneToManyPk(propertyName) + "=" + expected;
 
-            foreach (Dictionary<string,object> item in DataBase.Instance.ejecutarConsulta(existentFksQuery))
+            foreach (Dictionary<string,object> item in DataBase.Instance.ejecutarConsulta(existentFksQuery,sqlParameters))
             {
                 existentFks.Add(item[objeto.getOneToManyFk(propertyName)]);
             }
