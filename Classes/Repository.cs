@@ -475,6 +475,31 @@ namespace TostadoPersistentKit
             return (result.Count > 0) ? result[0] : null;
         }
 
+        internal List<object> selectByProperties(Dictionary<string, object> properties)
+        {
+            return selectByProperties(properties, getModelClassType());
+        }
+
+        internal List<object> selectByProperties(Dictionary<string,object> properties,Type classType)
+        {
+            Serializable objeto = (Serializable)Activator.CreateInstance(classType);
+
+            List<SqlParameter> parameters = new List<SqlParameter>();
+
+            string selectQuery = "select * from " + objeto.getTableName() + " where ";
+
+            foreach (KeyValuePair<string,object> property in properties)
+            {
+                string expected = "@" + objeto.getMapFromKey(property.Key);
+                DataBase.Instance.agregarParametro(parameters, expected, property.Value);
+                selectQuery += objeto.getMapFromKey(property.Key) + "=" + expected + " and ";
+            }
+
+            selectQuery = selectQuery.Remove(selectQuery.Length - 5);
+
+            return executeAutoMappedSelect(selectQuery, parameters, classType);
+        }
+
         internal List<object> selectByProperty(string propertyName,object propertyValue)
         {
             return selectByProperty(propertyName, propertyValue, getModelClassType());
@@ -482,22 +507,10 @@ namespace TostadoPersistentKit
 
         internal List<object> selectByProperty(string propertyName, object propertyValue, Type classType)
         {
-            Serializable objeto = (Serializable)Activator.CreateInstance(classType);
+            Dictionary<string,object> properties = new Dictionary<string, object>();
+            properties.Add(propertyName, propertyValue);
 
-            List<SqlParameter> parameters = new List<SqlParameter>();
-
-            string expected = "@" + objeto.getMapFromKey(propertyName);
-
-            DataBase.Instance.agregarParametro(parameters, expected, propertyValue);
-
-            //bool isCharObject = typeof(string).IsAssignableFrom(propertyValue.GetType()) || typeof(char).IsAssignableFrom(propertyValue.GetType());
-
-            //string expected = isCharObject ? "'" + propertyValue.ToString() + "'" : propertyValue.ToString();
-
-            string selectQuery = "select * from " + objeto.getTableName() + " where " +
-                                objeto.getMapFromKey(propertyName) + "=" + expected;
-
-            return executeAutoMappedSelect(selectQuery, parameters,classType);
+            return selectByProperties(properties,classType);
         }
 
         private List<object> executeAutoMappedSelect(String selectQuery,List<SqlParameter> parameters,Type classType)
