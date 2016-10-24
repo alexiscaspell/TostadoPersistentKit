@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -169,11 +170,13 @@ namespace TostadoPersistentKit
 
             List<CustomAttributeData> classAttributes = GetType().CustomAttributes.ToList();
 
+            tableName = GetType().Name.ToLower();//Inicializo el nombre d ela clase en min
+
             if (classAttributes.Exists(a => a.AttributeType == typeof(Table)))//Mapeo nombre de tabla
             {
                 string tableNameAnnotatedValue = classAttributes[0].NamedArguments[0].TypedValue.Value.ToString();
 
-                tableName = tableNameAnnotatedValue == "" ? GetType().Name.ToLower() : tableNameAnnotatedValue;
+                tableName = tableNameAnnotatedValue == "" ? tableName : tableNameAnnotatedValue;
             }
         }
 

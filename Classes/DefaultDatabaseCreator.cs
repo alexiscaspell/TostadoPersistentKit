@@ -159,7 +159,7 @@ namespace TostadoPersistentKit
         {
             foreach (var item in dictionaryObjectsAndTypes.Values)
             {
-                createForeignKeys(item);//Me falta ver las fks de oneToMany
+                createForeignKeys(item);
             }
             foreach (var item in dictionaryObjectsAndTypes.Values)
             {
@@ -177,6 +177,29 @@ namespace TostadoPersistentKit
                 {
                     createOneToManyTable(objeto, item);
                 }
+                else
+                {
+                    addOneToManyForeignKey(objeto.getMapFromKey(objeto.getIdPropertyName()),
+                                            tableName, objeto.getTableName(), 
+                                            objeto.getOneToManyPk(item),
+                                            objeto.getPropertyType(objeto.getIdPropertyName()));
+                }
+            }
+        }
+
+        private void addOneToManyForeignKey(string oneToManyPk, string tableName,string referenceTableName, string oneToManyFk,Type typeFk)
+        {
+            try
+            {
+                DataBase.Instance.ejecutarConsulta("alter table " + tableName +
+                " add " + oneToManyFk + " " + getDataTypeName(typeFk)
+                +", foreign key(" + oneToManyFk +
+                ") references " + referenceTableName + "(" +
+                oneToManyPk + ")");
+            }
+            catch (Exception)
+            {
+                //Por ahi tambien esta la referencia en los 2 lados
             }
         }
 
