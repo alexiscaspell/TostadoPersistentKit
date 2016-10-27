@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using System.Data.SqlClient;
 using System.Data;
 using System.Windows.Forms;
+using System.IO;
 
 namespace TostadoPersistentKit
 {
@@ -33,10 +34,25 @@ namespace TostadoPersistentKit
         #endregion
         //Para obtener instancia escribir Database.Instance
 
-        private string datosConexion = Sistema.Instance.getDBConfigurations();
+        #region Propiedades
+
+        private DateTime fechaDatabase;
+
+        private string instanciaSql = "";
+
+        private string db = "";
+
+        private string username = "";
+
+        private string password = "";
+
+        private string datosConexion;
+
+        #endregion
 
         private DataBase()
         {
+            cargarDatos();
         }
 
         private SqlConnection abrirConexion()
@@ -163,6 +179,87 @@ namespace TostadoPersistentKit
 
                 return lista;
             }
+
+        internal void executeScript(string route)
+        {
+            string script = File.ReadAllText(route);
+
+            List<string> operations = script.Split(new[] { "GO", "Go", "go", "gO" }, StringSplitOptions.RemoveEmptyEntries).ToList();
+
+            foreach (var operation in operations)
+            {
+                try
+                {
+                    DataBase.Instance.ejecutarConsulta(operation);
+                }
+                catch (Exception)
+                {
+                    //Escondemos los errores cmo unos campeones
+                }
+            }
+        }
+
+        #region Accesors e Inicializacion
+
+        private void cargarDatos()
+        {
+            System.IO.StreamReader file = new System.IO.StreamReader("configuracion_Database.txt");
+            string line;
+            List<string> listaParser = new List<string>();
+
+            while ((line = file.ReadLine()) != null)
+            {
+                if (line != "")
+                {
+                    listaParser.Add(line);
+                }
+            }
+
+            cargarVariables(listaParser);
+
+            datosConexion = @"Data Source=localhost\" + instanciaSql + ";"
+                           + "Initial Catalog=" + db + "; Integrated Security=false;"
+                           + "UID=" + username + ";PWD=" + password + ";";
+
+            string[] listaFecha = listaParser[0].Split('=')[1].Trim().Split('/');
+
+            fechaDatabase = new DateTime(Convert.ToInt16(listaFecha[2]), Convert.ToInt16(listaFecha[1]), Convert.ToInt16(listaFecha[0]));
+        }
+
+        private void cargarVariables(List<string> listaParser)
+        {
+            instanciaSql = listaParser[1].Split('=')[1].Trim();
+            db = listaParser[2].Split('=')[1].Trim();
+            username = listaParser[3].Split('=')[1].Trim();
+            password = listaParser[4].Split('=')[1].Trim();
+        }
+
+        internal DateTime getDate()
+        {
+            return fechaDatabase;
+        }
+
+        internal string getSqlInstance()
+        {
+            return instanciaSql;
+        }
+
+        internal string getDb()
+        {
+            return db;
+        }
+
+        internal string getUsername()
+        {
+            return username;
+        }
+
+        internal string getPassword()
+        {
+            return username;
+        }
+
+        #endregion
     }
 
-    }
+}

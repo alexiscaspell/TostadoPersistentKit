@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -34,31 +35,6 @@ namespace TostadoPersistentKit
             createForeignKeys();
         }
 
-        internal void executeScript(string route)
-        {
-            System.IO.StreamReader file = new System.IO.StreamReader(route);
-
-            string script = "";
-
-            String line = "";
-
-            while ((line = file.ReadLine()) != null)
-            {
-                if (line != "")
-                {
-                    script += line + " ";
-                }
-            }
-            List<string> dummyList = new List<string> { "go" };
-
-            List<string> operations = script.Split(dummyList.ToArray(),
-                                    StringSplitOptions.RemoveEmptyEntries).ToList();
-
-            operations.RemoveAll(o => o.Trim() == "");//correccion
-
-            operations.ForEach(operation => DataBase.Instance.ejecutarConsulta(operation));
-        }
-
         public void dropExistingTables()
         {
             List<string> oneToManyTables = new List<string>();
@@ -83,10 +59,6 @@ namespace TostadoPersistentKit
                     if (existsTable(item))
                     {
                         dropTable(item);
-                    }
-                    else
-                    {
-                            
                     }
                 }
                 foreach (var item in dictionaryObjectsAndTypes.Values)//Borro tablas
