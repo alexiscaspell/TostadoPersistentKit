@@ -203,7 +203,7 @@ namespace TostadoPersistentKit
 
         private void cargarDatos()
         {
-            System.IO.StreamReader file = new System.IO.StreamReader("configuracion_Database.txt");
+            System.IO.StreamReader file = new System.IO.StreamReader("configuracion_sistema.txt");
             string line;
             List<string> listaParser = new List<string>();
 
