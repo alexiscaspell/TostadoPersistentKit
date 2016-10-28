@@ -290,5 +290,27 @@ namespace TostadoPersistentKit
         {
             return GetType().GetProperty(propertyName).PropertyType;
         }
+
+        internal object getIdValue()
+        {
+            return getPropertyValue(getIdPropertyName());
+        }
+
+        internal object getPkValue()
+        {
+            object value = getIdValue();
+
+            if (value==null)
+            {
+                return null;
+            }
+
+            if (typeof(Serializable).IsAssignableFrom(value.GetType()))
+            {
+                return ((Serializable)value).getPropertyValue(((Serializable)value).getIdPropertyName());
+            }
+
+            return value;
+        }
     }
 }

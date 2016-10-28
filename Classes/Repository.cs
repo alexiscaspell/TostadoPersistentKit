@@ -22,8 +22,6 @@ namespace TostadoPersistentKit
         {
             List<string> parameterNames = new List<string>();
 
-
-
             string query = "SELECT * FROM INFORMATION_SCHEMA.PARAMETERS "
                             + "WHERE SPECIFIC_NAME = " + "'"
                             + storedProcedure.Split('.')[storedProcedure.Split('.').Length - 1] + "'"
@@ -61,9 +59,7 @@ namespace TostadoPersistentKit
                     if (typeof(Serializable).IsAssignableFrom(dataValue.GetType()))
                     {
                         Serializable serializableProperty = (Serializable)dataValue;
-                        dataValue = serializableProperty.getDataValue(serializableProperty
-                                                            .getMapFromKey(serializableProperty
-                                                            .getIdPropertyName()));
+                        dataValue = serializableProperty.getPkValue();
                     }
 
                 }
@@ -98,41 +94,46 @@ namespace TostadoPersistentKit
             return returnValue(dictionaryList,modelClassType);
         }
 
+        internal void completeProperty(string propertyName,Serializable incompleteObject)
+        {
+            completeProperty(incompleteObject, propertyName, incompleteObject.getPropertyValue(propertyName), false);
+        }
+
+        internal void completeProperty(Serializable incompleteObject,string propertyName,object propertyValue,bool ignoreLazyProperty)
+        {
+            if (incompleteObject.getFetchType(propertyName) == FetchType.EAGER||!ignoreLazyProperty)
+            {
+                if (incompleteObject.isOneToManyProperty(propertyName))
+                {
+                    completeOneToManyProperty(incompleteObject, propertyName);
+                }
+
+                if (typeof(Serializable).IsAssignableFrom(incompleteObject.getPropertyType(propertyName)) && propertyValue != null)
+                {
+                    Serializable serializableProperty = (Serializable)propertyValue;
+
+                    Type propertyType = serializableProperty.GetType();
+
+                    object propertyId = serializableProperty.getPkValue();
+
+                    serializableProperty = (Serializable)selectById(propertyId, propertyType);
+
+                    incompleteObject.GetType().GetProperty(propertyName).SetValue(incompleteObject, serializableProperty);
+                }
+            }
+        }
+
         private void completeSerializableObject(Serializable incompleteObject)
         {
             foreach (KeyValuePair<string,object> item in getPropertyValues(incompleteObject,true))
             {
-                if (incompleteObject.getFetchType(item.Key)==FetchType.EAGER)
-                {
-                    if (incompleteObject.isOneToManyProperty(item.Key))
-                    {
-                        completeOneToManyProperty(incompleteObject, item.Key);
-                    }
-
-                    if (typeof(Serializable).IsAssignableFrom(incompleteObject.GetType().GetProperty(item.Key).PropertyType)&&item.Value!=null)
-                    {
-                        Serializable serializableProperty = (Serializable)item.Value;
-
-                        Type propertyType = serializableProperty.GetType();
-
-                        object propertyId = propertyType.GetProperty(serializableProperty.
-                                                    getIdPropertyName()).GetValue(serializableProperty);
-
-
-                        serializableProperty = (Serializable)selectById(propertyId, propertyType);
-
-                        incompleteObject.GetType().GetProperty(item.Key).SetValue(incompleteObject, serializableProperty);
-                    }
-                }
+                completeProperty(incompleteObject, item.Key, item.Value, true);
             }
         }
 
         private void completeOneToManyProperty(Serializable incompleteObject, string propertyName)
         {
-            Type containingTypeOfProperty = Assembly.GetExecutingAssembly().
-                                            GetType(incompleteObject.GetType().
-                                            GetProperty(propertyName).PropertyType.
-                                            ToString().Split('[')[1].Split(']')[0]);
+            Type containingTypeOfProperty = incompleteObject.getOneToManyPropertyType(propertyName);
 
             Serializable containingTypeOfPropertyInstance = (Serializable)Activator.CreateInstance(containingTypeOfProperty);
 
@@ -140,17 +141,11 @@ namespace TostadoPersistentKit
             string currentForeignKey = incompleteObject.getOneToManyFk(propertyName);
             string currentPrimaryKey = incompleteObject.getOneToManyPk(propertyName);
 
-            object currentIdValue = incompleteObject.GetType().GetProperty(incompleteObject.getIdPropertyName()).
-                                    GetValue(incompleteObject);
+            object currentIdValue = incompleteObject.getPropertyValue(incompleteObject.getIdPropertyName());
 
             string expected = "@"+currentPrimaryKey;
             List<SqlParameter> sqlParameters = new List<SqlParameter>();
             DataBase.Instance.agregarParametro(sqlParameters, expected, currentIdValue);
-
-            //bool isCharObject = typeof(string).IsAssignableFrom(currentIdValue.GetType()) || typeof(char).IsAssignableFrom(currentIdValue.GetType());
-
-            //string expected = isCharObject ? "'" + currentIdValue.ToString() + "'" : currentIdValue.ToString();
-
 
             string query = "select * from " + intermediateTable + " ";
             string conditionQuery = "where " + currentPrimaryKey + "=" + expected;
@@ -166,7 +161,7 @@ namespace TostadoPersistentKit
 
             query += conditionQuery;
 
-            Type listType = incompleteObject.GetType().GetProperty(propertyName).PropertyType;
+            Type listType = incompleteObject.getPropertyType(propertyName);
 
             object dummyList = Activator.CreateInstance(listType);
 
@@ -174,14 +169,12 @@ namespace TostadoPersistentKit
             incompleteObject.GetType().GetProperty(propertyName).
                             SetValue(incompleteObject, dummyList);
 
-            foreach (var item in (List<object>)executeQuery(query, sqlParameters, containingTypeOfProperty))
+            foreach (var item in executeQuery(query, sqlParameters, containingTypeOfProperty))
             {
                 List<object> parameters = new List<object> { item};
                 incompleteObject.GetType().GetProperty(propertyName).
                                 PropertyType.GetMethod("Add").
-                                Invoke(incompleteObject.GetType().
-                                GetProperty(propertyName).
-                                GetValue(incompleteObject), parameters.ToArray());
+                                Invoke(incompleteObject.getPropertyValue(propertyName), parameters.ToArray());
             }
         }
 
@@ -224,7 +217,7 @@ namespace TostadoPersistentKit
 
                 if (propertyName != "")
                 {
-                    Type propertyType = objeto.GetType().GetProperty(propertyName).PropertyType;
+                    Type propertyType = objeto.getPropertyType(propertyName);
 
                     bool isSerializable = typeof(Serializable).IsAssignableFrom(propertyType);
 
@@ -244,7 +237,7 @@ namespace TostadoPersistentKit
 
                         else
                         {
-                            object dataValue = getCastedValue(dictionary[dataName], objeto.GetType().GetProperty(propertyName).PropertyType);
+                            object dataValue = getCastedValue(dictionary[dataName], objeto.getPropertyType(propertyName));
                             objeto.GetType().GetProperty(propertyName).SetValue(objeto, dataValue);
                         }
                         dictionaryAux.Remove(keyToRemove);
@@ -361,9 +354,8 @@ namespace TostadoPersistentKit
                             insert(serializableProperty, serializableProperty.getIdPropertyName(), serializableProperty.getTableName(), true);
                         }
 
-                        object parametro = isSerializableProperty ? serializableProperty.GetType().
-                                            GetProperty(serializableProperty.getIdPropertyName()).
-                                            GetValue(serializableProperty) : keyValuePair.Value;
+                        object parametro = isSerializableProperty ? serializableProperty.getPropertyValue(
+                                            serializableProperty.getIdPropertyName()) : keyValuePair.Value;
 
                         DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
                     }
@@ -380,7 +372,7 @@ namespace TostadoPersistentKit
             object insertResult = DataBase.Instance.ejecutarConsulta(
                                   insertQuery, parametros)[0][primaryKeyName];
 
-            Type idType = objeto.GetType().GetProperty(objeto.getIdPropertyName()).PropertyType;
+            Type idType = objeto.getPropertyType(objeto.getIdPropertyName());
 
             object idValue = getCastedValue(insertResult, idType);
 
@@ -400,23 +392,12 @@ namespace TostadoPersistentKit
 
             string oneToManyTable = objeto.getOneToManyTable(propertyName);
 
-            //bool isCharPk = typeof(string).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType()) 
-              //              || typeof(char).IsAssignableFrom(objeto.getPropertyValue(objeto.getIdPropertyName()).GetType());
-
-            //string expectedPk = isCharPk ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : 
-                                //objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
-
             string expectedPk = "@" + objeto.getOneToManyPk(propertyName);
 
             foreach (var item in (IEnumerable)objeto.getPropertyValue(propertyName))
             {
                 Serializable serializableItem = (Serializable)item;
-
-                //bool isCharFk = typeof(string).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType())
-                                //|| typeof(char).IsAssignableFrom(serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).GetType());
-
-                //string expectedFk = isCharPk ? "'" + serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString() + "'" :
-                                    //serializableItem.getPropertyValue(serializableItem.getIdPropertyName()).ToString();
+                
                 string expectedFk = "@" + objeto.getOneToManyFk(propertyName);
 
                 List<SqlParameter> sqlParameters = new List<SqlParameter>();
@@ -453,11 +434,17 @@ namespace TostadoPersistentKit
 
         private void delete(Serializable objeto,String primaryKeyPropertyName,String tableName)
         {
-            String deleteQuery = "delete from " + tableName + " where " 
-                                + objeto.getMapFromKey(primaryKeyPropertyName) + "="
-                                + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto).ToString();
+            List<SqlParameter> parameters = new List<SqlParameter>();
 
-            DataBase.Instance.ejecutarConsulta(deleteQuery);
+            string expected = "@" + objeto.getMapFromKey(primaryKeyPropertyName);
+
+            DataBase.Instance.agregarParametro(parameters, expected, objeto.getPkValue());
+
+            String deleteQuery = "delete from " + tableName + " where "
+                                + objeto.getMapFromKey(primaryKeyPropertyName) + "="
+                                + expected;
+
+            DataBase.Instance.ejecutarConsulta(deleteQuery,parameters);
         }
 
         //Se supone que lo que se espera en el where de la consulta es id.toString()
@@ -575,9 +562,7 @@ namespace TostadoPersistentKit
                         {
                             Serializable serializableProperty = (Serializable)keyValuePair.Value;
 
-                            parametro = serializableProperty.GetType().
-                                            GetProperty(serializableProperty.getIdPropertyName()).
-                                            GetValue(serializableProperty);
+                            parametro = serializableProperty.getPropertyValue(serializableProperty.getIdPropertyName());
                         }
                         updateQuery += dataName + "=@" + dataName + ",";
                         DataBase.Instance.agregarParametro(parametros, "@" + dataName, parametro);
@@ -588,7 +573,7 @@ namespace TostadoPersistentKit
             updateQuery = updateQuery.Remove(updateQuery.Length - 1);
 
             updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "="
-                        + objeto.GetType().GetProperty(primaryKeyPropertyName).GetValue(objeto);
+                        + objeto.getPropertyValue(primaryKeyPropertyName);
 
             if (cascadeMode)
             {
@@ -629,10 +614,6 @@ namespace TostadoPersistentKit
 
             object notExistentFkObjects = Activator.CreateInstance(objeto.getPropertyType(propertyName));
             List<object> existentFks = new List<object>();
-
-            //bool isCharObject = typeof(string).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName())) || typeof(char).IsAssignableFrom(objeto.getPropertyType(objeto.getIdPropertyName()));
-
-            //string expected = isCharObject ? "'" + objeto.getPropertyValue(objeto.getIdPropertyName()).ToString() + "'" : objeto.getPropertyValue(objeto.getIdPropertyName()).ToString();
 
             string expected = "@" + objeto.getOneToManyPk(propertyName);
             List<SqlParameter> sqlParameters = new List<SqlParameter>();
