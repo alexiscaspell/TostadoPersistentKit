@@ -61,7 +61,6 @@ namespace TostadoPersistentKit
                         Serializable serializableProperty = (Serializable)dataValue;
                         dataValue = serializableProperty.getPkValue();
                     }
-
                 }
 
                 DataBase.Instance.agregarParametro(parameters, parameterName, dataValue);
@@ -141,7 +140,7 @@ namespace TostadoPersistentKit
             string currentForeignKey = incompleteObject.getOneToManyFk(propertyName);
             string currentPrimaryKey = incompleteObject.getOneToManyPk(propertyName);
 
-            object currentIdValue = incompleteObject.getPropertyValue(incompleteObject.getIdPropertyName());
+            object currentIdValue = incompleteObject.getPkValue();
 
             string expected = "@"+currentPrimaryKey;
             List<SqlParameter> sqlParameters = new List<SqlParameter>();
@@ -230,7 +229,11 @@ namespace TostadoPersistentKit
 
                             object dataValue = dictionaryAux[dataName];
                             dictionaryAux.Remove(dataName);
-                            dictionaryAux.Add(keyToRemove, dataValue);
+
+                            if (!dictionaryAux.ContainsKey(keyToRemove))//parchado porque rompio en un test diciendo que ya se habia insertado la clave
+                            {
+                                dictionaryAux.Add(keyToRemove, dataValue);
+                            }
 
                             objeto.GetType().GetProperty(propertyName).SetValue(objeto, unSerialize(dictionaryAux, propertyType));
                         }
@@ -374,7 +377,22 @@ namespace TostadoPersistentKit
 
             Type idType = objeto.getPropertyType(objeto.getIdPropertyName());
 
-            object idValue = getCastedValue(insertResult, idType);
+            object idValue = null;
+
+            if (typeof(Serializable).IsAssignableFrom(idType))
+            {
+                idValue = objeto.getIdValue();
+                Serializable serializableId = (Serializable)idValue;
+                serializableId.GetType().GetProperty(serializableId.getIdPropertyName()).
+                                        SetValue(serializableId, 
+                                        getCastedValue(insertResult, 
+                                         serializableId.
+                                         getPropertyType(serializableId.getIdPropertyName())));
+            }
+            else
+            {
+                idValue = getCastedValue(insertResult, idType);
+            }
 
             objeto.GetType().GetProperty(objeto.getIdPropertyName()).SetValue(objeto, idValue);
 
@@ -401,8 +419,8 @@ namespace TostadoPersistentKit
                 string expectedFk = "@" + objeto.getOneToManyFk(propertyName);
 
                 List<SqlParameter> sqlParameters = new List<SqlParameter>();
-                DataBase.Instance.agregarParametro(sqlParameters, expectedPk, objeto.getPropertyValue(objeto.getIdPropertyName()));
-                DataBase.Instance.agregarParametro(sqlParameters, expectedFk, serializableItem.getPropertyValue(serializableItem.getIdPropertyName()));
+                DataBase.Instance.agregarParametro(sqlParameters, expectedPk, objeto.getPkValue());
+                DataBase.Instance.agregarParametro(sqlParameters, expectedFk, serializableItem.getPkValue());
 
                 string query = "";
 
@@ -423,7 +441,7 @@ namespace TostadoPersistentKit
                             expectedFk + ")";
                 }
 
-                DataBase.Instance.ejecutarConsulta(query);
+                DataBase.Instance.ejecutarConsulta(query,sqlParameters);
             }
         }
 
@@ -478,7 +496,9 @@ namespace TostadoPersistentKit
             foreach (KeyValuePair<string,object> property in properties)
             {
                 string expected = "@" + objeto.getMapFromKey(property.Key);
-                DataBase.Instance.agregarParametro(parameters, expected, property.Value);
+                object pkPropertyValue = typeof(Serializable).IsAssignableFrom(property.Value.GetType()) ? ((Serializable)property.Value).getPkValue() : property.Value;
+
+                DataBase.Instance.agregarParametro(parameters, expected, pkPropertyValue);
                 selectQuery += objeto.getMapFromKey(property.Key) + "=" + expected + " and ";
             }
 
@@ -573,7 +593,7 @@ namespace TostadoPersistentKit
             updateQuery = updateQuery.Remove(updateQuery.Length - 1);
 
             updateQuery += " where " + objeto.getMapFromKey(primaryKeyPropertyName) + "="
-                        + objeto.getPropertyValue(primaryKeyPropertyName);
+                        + objeto.getPkValue();
 
             if (cascadeMode)
             {
@@ -617,7 +637,7 @@ namespace TostadoPersistentKit
 
             string expected = "@" + objeto.getOneToManyPk(propertyName);
             List<SqlParameter> sqlParameters = new List<SqlParameter>();
-            DataBase.Instance.agregarParametro(sqlParameters, expected, objeto.getPropertyValue(objeto.getIdPropertyName()));
+            DataBase.Instance.agregarParametro(sqlParameters, expected, objeto.getPkValue());
 
             string existentFksQuery = "select " + objeto.getOneToManyFk(propertyName)
                                     + " from " + objeto.getOneToManyTable(propertyName) + " where " 

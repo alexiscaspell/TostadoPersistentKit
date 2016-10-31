@@ -180,9 +180,11 @@ namespace TostadoPersistentKit
                 return lista;
             }
 
-        internal void executeScript(string route)
+        internal bool executeScript(string route)
         {
             string script = File.ReadAllText(route);
+
+            bool salioTodoBien = true;
 
             List<string> operations = script.Split(new[] { "GO", "Go", "go", "gO" }, StringSplitOptions.RemoveEmptyEntries).ToList();
 
@@ -190,13 +192,16 @@ namespace TostadoPersistentKit
             {
                 try
                 {
-                    DataBase.Instance.ejecutarConsulta(operation);
+                    ejecutarConsulta(operation);
                 }
                 catch (Exception)
                 {
+                    salioTodoBien = false;
                     //Escondemos los errores cmo unos campeones
                 }
             }
+
+            return salioTodoBien;
         }
 
         #region Accesors e Inicializacion
