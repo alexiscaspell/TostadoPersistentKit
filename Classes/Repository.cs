@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 
@@ -674,6 +675,132 @@ namespace TostadoPersistentKit
         {
             Type listType = typeof(List<>).MakeGenericType(new[] { type });
             return (IList)Activator.CreateInstance(listType);
+        }
+
+        internal IList executeDynamicQuery(params object[] parameters)
+        {
+            /*StackFrame frame = new StackFrame(1);
+            var method = frame.GetMethod();
+            var type = method.DeclaringType;
+            var name = method.Name;*/
+            string methodName = new StackFrame(1).GetMethod().Name;
+
+            List<Dictionary<string, string>> columnsAndConnectors = getParsedQueryMethod(methodName);
+
+            List<SqlParameter> sqlParameters = new List<SqlParameter>();
+
+            string query = "select * from " + ((Serializable)Activator.CreateInstance(getModelClassType())).getTableName() + " where";
+
+
+
+            for (int i = 0; i < columnsAndConnectors.Count; i++)
+            {
+                Dictionary<string, string> item = columnsAndConnectors[i];
+
+                int tries = 0;
+                bool error = true;
+
+                while (error)
+                {
+                    if (!sqlParameters.Exists(p => p.ParameterName == "@" + item["column"] + tries.ToString()))
+                    {
+                        error = false;
+                        DataBase.Instance.agregarParametro(sqlParameters, "@" + item["column"] + tries.ToString(), parameters[i]);
+                        tries--;
+                    }
+                    tries++;
+                }
+
+                query += " " + item["column"] + "=@" + item["column"]+tries.ToString() + " " + item["connector"];
+            }
+
+            return executeQuery(query, sqlParameters);
+        }
+
+        private List<Dictionary<string, string>> getParsedQueryMethod(string methodName)
+        {
+            Serializable objeto = (Serializable)Activator.CreateInstance(getModelClassType());
+
+            List<Dictionary<string, string>> columnsAndConnectors = new List<Dictionary<string, string>>();
+
+            string unparsedQuery = methodName.Remove(0, 8);//methodName.Split(new string[] { "By" }, StringSplitOptions.None)[1];
+
+            List<char> enumerableUnparsedQuery = unparsedQuery.ToList();
+
+            int counter = 0;
+
+            for (int i = 0; i < enumerableUnparsedQuery.Count; i++)
+            {
+                Dictionary<string, string> newDictionary = new Dictionary<string, string>();
+
+                string column = "";
+                string property = "";
+
+                if (i+3>=enumerableUnparsedQuery.Count)
+                {
+                    property = unparsedQuery.Substring(counter, unparsedQuery.Length-counter);//unparsedQuery;
+
+                    column = property;
+                    char[] dummyArray = column.ToCharArray();
+                    dummyArray[0] = property[0].ToString().ToLower()[0];
+                    column = new string(dummyArray);
+                    column = objeto.getMapFromKey(column);
+
+                    if (column=="")
+                    {
+                        column = objeto.getMapFromKey(property);
+                    }
+
+                    newDictionary.Add("column", column);
+                    newDictionary.Add("connector", "");
+                    columnsAndConnectors.Add(newDictionary);
+                    break;
+                }
+                if (enumerableUnparsedQuery[i]=='O'&&enumerableUnparsedQuery[i+1]=='r')
+                {
+                    property = unparsedQuery.Substring(counter, i-counter);//unparsedQuery.Remove(i, unparsedQuery.Length - i);
+                    counter += property.Length+ 2;
+
+                    column = property;
+                    char[] dummyArray = column.ToCharArray();
+                    dummyArray[0] = property[0].ToString().ToLower()[0];
+                    column = new string(dummyArray);
+                    column = objeto.getMapFromKey(column);
+
+                    if (column == "")
+                    {
+                        column = objeto.getMapFromKey(property);
+                    }
+
+                    newDictionary.Add("column", column);
+                    newDictionary.Add("connector", "or");
+                    //unparsedQuery = unparsedQuery.Remove(0, i + 2);
+                    columnsAndConnectors.Add(newDictionary);
+                }
+                if (enumerableUnparsedQuery[i] == 'A' && enumerableUnparsedQuery[i + 1] == 'n'&&enumerableUnparsedQuery[i+2]=='d')
+                {
+                    property = unparsedQuery.Substring(counter, i-counter);//unparsedQuery.Remove(i, unparsedQuery.Length - i);
+                    counter += property.Length + 3;
+
+                    column = property;
+                    char[] dummyArray = column.ToCharArray();
+                    dummyArray[0] = property[0].ToString().ToLower()[0];
+                    column = new string(dummyArray);
+                    column = objeto.getMapFromKey(column);
+
+                    if (column == "")
+                    {
+                        column = objeto.getMapFromKey(property);
+                    }
+
+                    newDictionary.Add("column", column);
+                    newDictionary.Add("connector", "and");
+                    //unparsedQuery = unparsedQuery.Remove(0, i + 3);
+                    columnsAndConnectors.Add(newDictionary);
+                }
+            }
+
+            return columnsAndConnectors;
         }
     }
 }
